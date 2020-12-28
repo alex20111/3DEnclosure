@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Appenders>
+		<Console name="LogToConsole" target="SYSTEM_OUT">
+			<PatternLayout
+				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
+		</Console>
+		<RollingFile   name="roll-by-size" 
+		  fileName="logs/piModule.log"
+		  filePattern="logs/piModule.%i.log.gz" 
+		  ignoreExceptions="false">
+		    <PatternLayout>
+		        <Pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} %m%n</Pattern>
+		    </PatternLayout>
+		    <Policies>
+		        <OnStartupTriggeringPolicy />
+		        <SizeBasedTriggeringPolicy size="1 MB" />
+		    </Policies>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Logger name="enclosure.pi" level="debug" additivity="false">
+			<AppenderRef ref="LogToConsole" />
+			<AppenderRef ref="roll-by-size"/>
+		</Logger>
+		<Root level="error">
+			<AppenderRef ref="LogToConsole" />
+			<AppenderRef ref="roll-by-size"/>
+		</Root>
+	</Loggers>
+</Configuration>
