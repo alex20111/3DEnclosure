@@ -1,9 +1,11 @@
+import { GeneralService } from './../services/general.service';
 import { TemperatureService } from './../services/temperature.service';
 import { FanService } from './../services/fan.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { LightService } from '../services/light.service';
-import { faThermometerHalf, faLightbulb, faFan , faTachometerAlt} from '@fortawesome/free-solid-svg-icons';
+import { faThermometerHalf, faLightbulb, faFan , faTachometerAlt, faCog} from '@fortawesome/free-solid-svg-icons';
+import {NgbDropdownConfig} from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-lcd-dashboard',
@@ -28,9 +30,11 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   lightTest: string = "OFF";
   lightLoading: boolean = false;
 
-  encTemperature: string = "55";
+  encTemperature: string = "99";
 
+  //alerts
   error: string = '';
+  message: string = '';
 
   fanRpmtimer: Subscription | undefined;
   temp1Timer: Subscription | undefined;
@@ -40,57 +44,60 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faLightbulb = faLightbulb;
   faFan = faFan;
   faTachometerAlt = faTachometerAlt;
+  faCog = faCog;
 
   constructor(private fanService: FanService,
      private lightService: LightService,
-      private temperatureService: TemperatureService) { }
+      private temperatureService: TemperatureService,
+      private generalService: GeneralService) { }
 
 
   ngOnInit(): void {
-    this.fanRpmtimer = timer(2000, 6000).subscribe(val => {
-      this.fanService.getFanRmp().subscribe(rpm => {
-        this.extrFanRpm = rpm;
-      },
-        error => {
-          console.log('error', error);
-          this.error = error.message + ' ' + error.error.error;
-        });
-    });
+    // this.fanRpmtimer = timer(2000, 6000).subscribe(val => {
+    //   this.fanService.getFanRmp().subscribe(rpm => {
+    //     this.extrFanRpm = rpm;
+    //   },
+    //     error => {
+    //       console.log('error', error);
+    //       this.error = error.message + ' ' + error.error.error;
+    //     });
+    // });
 
-    // temperature on a timer
-    this.temp1Timer = timer(3000, 6000).subscribe(val => {
-      this.temperatureService.getEnclosureTemperature().subscribe(temp => {
-        this.encTemperature = temp;
-      },
-        error => {
-          console.log('error', error);
-          this.error = error.message + ' ' + error.error.error;
-        });
-    });
+    // // temperature on a timer
+    // this.temp1Timer = timer(3000, 6000).subscribe(val => {
+    //   this.temperatureService.getEnclosureTemperature().subscribe(temp => {
+    //     this.encTemperature = temp;
+    //   },
+    //     error => {
+    //       console.log('error', error);
+    //       this.error = error.message + ' ' + error.error.error;
+    //     });
+    // });
 
-    //get the fan speed to set the inital values
-    this.fanService.getFanSpeed().subscribe(speed => {
-      if (speed === -1) {
-        this.disableDecBtn = true;
-        speed = 0;
-      }
-      this.fanService.setFanSpeed(speed).subscribe(
-        result => {
-          this.extrSpeed = parseInt(result.message);
-          this.extrSpeedLoading = false;
+    // //get the fan speed to set the inital values
+    // this.fanService.getFanSpeed().subscribe(speed => {
+    //   if (speed === -1) {
+    //     this.disableDecBtn = true;
+    //     speed = 0;
+    //   }
+    //   this.fanService.setFanSpeed(speed).subscribe(
+    //     result => {
+    //       this.extrSpeed = parseInt(result.message);
+    //       this.extrSpeedLoading = false;
 
-        }, error => {
-          this.showError(error);
-        });
-    },
-      err => {
-        this.showError(err);
-      }
-    );
+    //     }, error => {
+    //       this.showError(error);
+    //     });
+    // },
+    //   err => {
+    //     this.showError(err);
+    //   }
+    // );
   }
 
   ngOnDestroy(): void {
     this.fanRpmtimer?.unsubscribe();
+    this.temp1Timer?.unsubscribe();
   }
 
   extrFanSpeedDec() {
@@ -225,8 +232,13 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     console.log("httpError", httpError);
   }
 
-  close() {
-    // this.alerts.splice(this.alerts.indexOf(alert), 1);
-    this.error = '';
+//shutdown the system.
+  shutDown(){
+    this.generalService.shutdownSystem().subscribe(success => {
+      this.message = success.message;
+    },
+    httpError => {
+      this.error = httpError.message + ' ' + httpError.error.error;
+    })
   }
 }

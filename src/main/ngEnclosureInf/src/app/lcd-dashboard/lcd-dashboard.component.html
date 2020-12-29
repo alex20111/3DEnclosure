@@ -1,11 +1,27 @@
-<h2 style="color: white;"> Enclosure monitor v1.0</h2>
+<h2 style="color: white;"> Enclosure monitor v1.0
+
+  <div ngbDropdown class="d-inline-block float-right" placement="bottom-right" >
+    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle><fa-icon [icon]="faCog"></fa-icon></button>
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1" >
+      <button ngbDropdownItem>Print</button>
+      <button ngbDropdownItem>Config</button>
+      <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
+    </div>
+  </div>
+</h2>
+
+
 
 <p *ngIf="error">
-  <ngb-alert type="danger"  (closed)="close()"> 
+  <ngb-alert type="danger" (closed)="error ='' ">
     {{error}}
   </ngb-alert>
 </p>
-
+<p *ngIf="message">
+  <ngb-alert type="danger" (closed)="message = ''">
+    {{error}}
+  </ngb-alert>
+</p>
 
 <div class="container">
   <div class="row">
@@ -13,25 +29,31 @@
 
       <h3>Extractor Fan</h3>
       <div>
-        <p><fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}</p>
+        <p>
+          <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
+        </p>
       </div>
 
       <div class="mt-1 ">
-        <p><fa-icon class="mr-1"  style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon>  {{extrSpeed}}%</p>
+        <p>
+          <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
+        </p>
 
-        <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanSpeedDec()" class="btn btn-primary">
+        <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanSpeedDec()" class="btn btn-primary mb-1">
           <span *ngIf="btn1Loading" class="spinner-border spinner-border-sm mr-1"></span>
           - </button>
-        <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanSpeedInc()" class="ml-1 btn btn-primary">
+        <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanSpeedInc()" class="ml-1 btn btn-primary mb-1">
           <span *ngIf="btn2Loading" class="spinner-border spinner-border-sm mr-1"></span>
-          +</button>
-          <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanFullSpeed()" class="ml-1 btn btn-success float-right">
-            <span *ngIf="btn3Loading" class="spinner-border spinner-border-sm mr-1"></span>
-            100%</button>
-            <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanStop()" class="ml-1 btn btn-danger float-right">
-              <span *ngIf="btn4Loading" class="spinner-border spinner-border-sm mr-1"></span>
-              0%</button>
-          
+          +</button> <br/>
+        <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanFullSpeed()"
+          class="btn btn-success ">
+          <span *ngIf="btn3Loading" class="spinner-border spinner-border-sm mr-1"></span>
+          100%</button>
+        <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanStop()"
+          class="btn btn-danger ">
+          <span *ngIf="btn4Loading" class="spinner-border spinner-border-sm mr-1"></span>
+          0%</button>
+
 
       </div> <br />
 
@@ -41,15 +63,17 @@
       <div>
         <span style="font-size: 3em; ">
           <fa-icon [icon]="faLightbulb"></fa-icon>
-          </span>
-      <button [disabled]="lightLoading" [ngClass]="{ 'btn-success': lightOn , 'btn-danger': !lightOn}" (click)="light()"
-        class="btn ml-2 ">
-        <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
-        {{lightTest}}
-      </button>
-    </div>
+        </span>
+        <button [disabled]="lightLoading" [ngClass]="{ 'btn-success': lightOn , 'btn-danger': !lightOn}"
+          (click)="light()" class="btn ml-2 ">
+          <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
+          {{lightTest}}
+        </button>
+      </div>
       <span style="font-size: 3em; ">
-       <p class="ml-2"> <fa-icon [icon]="faThermometerHalf"></fa-icon>   {{encTemperature}} </p>
+        <p class="ml-2">
+          <fa-icon [icon]="faThermometerHalf"></fa-icon> {{encTemperature}}
+        </p>
       </span>
     </div>
 
