@@ -5,8 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TemperatureEnclosure implements Command{
 	
-	public static final String TEMP_COMMAND = "t";
-	
+
 	private ArduinoHandler ah;
 	
 	public TemperatureEnclosure() {
@@ -16,7 +15,7 @@ public class TemperatureEnclosure implements Command{
 	public String getTemperature() throws IllegalStateException, IOException, InterruptedException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(START_MARKER);
-		sb.append(TEMP_COMMAND);
+		sb.append(TEMPERATURE_CMD);
 		sb.append(END_MARKER);
 		ah.writeToSerial(sb.toString());
 		

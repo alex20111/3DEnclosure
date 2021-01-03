@@ -13,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.Lights;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
 
@@ -49,6 +51,7 @@ public class LightService {
 			}
 			
 			light.triggerLight();
+			SharedData.getInstance().putSensor(SensorsData.LIGHT_STATUS, light.getLightStatus());//setLightStatus(light.getLightStatus()); //sending to common status.
 			
 			msg = new Message(MessageType.SUCCESS, value);
 			

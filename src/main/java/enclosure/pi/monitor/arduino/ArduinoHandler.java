@@ -3,6 +3,7 @@ package enclosure.pi.monitor.arduino;
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,7 +19,6 @@ import com.pi4j.io.serial.SerialDataEventListener;
 import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
 
-import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 
 public class ArduinoHandler {
 
@@ -26,16 +26,20 @@ public class ArduinoHandler {
 
 	private Serial serial;
 	private SerialConfig config;
+	private boolean arduinoReady = false;
 
 	private static ArduinoHandler arduinoHandler;
 	private final BlockingQueue<Integer> rpmQueue =  new ArrayBlockingQueue<>(1);
 	private final BlockingQueue<String> encTemp =  new ArrayBlockingQueue<>(1);
+	private final BlockingQueue<String> allSensorQueue =  new ArrayBlockingQueue<>(1);
+
+	private ArduinoSerialEvent ardSerialEvent;
 
 	private ArduinoHandler() {		
 		serial = SerialFactory.createInstance();
 		config = new SerialConfig();
 		config.device("/dev/ttyUSB0")
-		.baud(Baud._9600)
+		.baud(Baud._19200)
 		.dataBits(DataBits._8)
 		.parity(Parity.NONE)
 		.stopBits(StopBits._1)
@@ -43,11 +47,8 @@ public class ArduinoHandler {
 
 		startListener();
 
-		try {
-			openSerialConnection();
-		} catch (IOException e) {
-			logger.error("error in ard constructor", e);
-		}
+		ardSerialEvent = new ArduinoSerialEvent();
+
 	}
 
 	public static ArduinoHandler getInstance() {
@@ -71,61 +72,56 @@ public class ArduinoHandler {
 	public BlockingQueue<Integer> extFanRpmQueue(){
 		return rpmQueue;
 	}
-	
+
 	public BlockingQueue<String> getEncTempQueue(){
 		return encTemp;
 	}
-	
 
-	//	public int getFanRpm() {
-	//		logger.debug("Get fan RPM");
-	//		int rpmVal = -1;
-	//		writeToSerial("<r>");
-	//		try{
-	//			rpmVal = rpmQueue.poll(4000, TimeUnit.MILLISECONDS); 
-	//
-	//		}catch(Exception ex) {
-	//			logger.error("error in fan rpm", ex);
-	//		}
-	//		return rpmVal;
-	//	}
-	//	
-	//	public void setFanSpeed (int speed) throws IllegalStateException, IOException {
-	//		serial.write("<s" + speed + ">");
-	//	}
-	//	
-	//	public 
-	//	
-	//	public void sendLightCommand(Lights light) {
-	//		
-	//	}
+	public BlockingQueue<String> getAllSensorQueue() {
+		return allSensorQueue;
+	}
 
-
+	public boolean isArduinoReady() {
+		return arduinoReady;
+	}
 
 	public synchronized void writeToSerial(String command) throws IllegalStateException, IOException {
-		logger.debug("Arduino writing command: " + command);
+		logger.debug("Arduino Ready? " + arduinoReady + " Writing command: " + command);
 
-		serial.write(command);
-
+		if (arduinoReady) {
+			serial.write(command);
+		}else {
+			logger.info("Arduino not ready.. bypassing command");
+		}
 
 	}
+
+	//TODO  just added start and end markers.. needs to check for it ..
 
 	private void startListener() {
 		serial.addListener(new SerialDataEventListener() {
 			@Override
 			public void dataReceived(SerialDataEvent event) {
 				try {
-					String serialEvent =  event.getAsciiString();
-					logger.debug("startListener Data: " +  serialEvent);
-					
+					String eventString =  event.getAsciiString();
 
-					if ("ready".equals(serialEvent)) {
-						logger.info("Arduino READY!");
-					}else if (serialEvent.trim().startsWith(ExtractorFanCmd.GET_RPM.getCmdStr()) ){
-						rpmQueue.put(Integer.parseInt(serialEvent.substring(1,serialEvent.trim().length())));
-					}else if(serialEvent.trim().startsWith(TemperatureEnclosure.TEMP_COMMAND)){
-						encTemp.put(serialEvent.substring(1,serialEvent.trim().length())) ;
+					if ("ready".equalsIgnoreCase(eventString)) {
+						arduinoReady = true;
+						logger.info("!! Arduino READY !!");
+					} else { 
+						ardSerialEvent.translateReceivedEvent(eventString);
+
+						if (ardSerialEvent.isCommandComplete()) {
+							if (ardSerialEvent.isCommand(Command.GET_RPM_CMD)) {
+								rpmQueue.offer( Integer.parseInt( ardSerialEvent.getOutput() ), 4000, TimeUnit.MILLISECONDS);
+							}else if (ardSerialEvent.isCommand(Command.TEMPERATURE_CMD)) {
+								encTemp.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS) ;
+							}else if(ardSerialEvent.isCommand(Command.ALL_SESNORS))  {
+								allSensorQueue.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS);
+							}
+						}				
 					}
+
 				} catch (Exception e) {
 					logger.error("Error in arduino listener" , e);
 				} 

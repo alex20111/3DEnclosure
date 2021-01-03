@@ -1,16 +1,18 @@
 <h2 style="color: white;"> Enclosure monitor v1.0
 
-  <div ngbDropdown class="d-inline-block float-right" placement="bottom-right" >
-    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle><fa-icon [icon]="faCog"></fa-icon></button>
-    <div ngbDropdownMenu aria-labelledby="dropdownBasic1" >
+  <div ngbDropdown class="d-inline-block float-right" placement="bottom-right">
+    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>
+      <fa-icon [icon]="faCog"></fa-icon>
+    </button>
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
       <button ngbDropdownItem>Print</button>
+      <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
+      <button ngbDropdownItem>Lights</button>
       <button ngbDropdownItem>Config</button>
       <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
     </div>
   </div>
 </h2>
-
-
 
 <p *ngIf="error">
   <ngb-alert type="danger" (closed)="error ='' ">
@@ -18,45 +20,31 @@
   </ngb-alert>
 </p>
 <p *ngIf="message">
-  <ngb-alert type="danger" (closed)="message = ''">
-    {{error}}
+  <ngb-alert type="success" (closed)="message = ''">
+    {{message}}
   </ngb-alert>
 </p>
-
+<p *ngIf="message">
+  <ngb-alert type="info" [dismissible]="false">
+    Printing. time remaining: 2:45.33
+  </ngb-alert>
+</p>
 <div class="container">
   <div class="row">
     <div class="col-6" style="color: white;   border-style: solid;  border-color: white;">
 
-      <h3>Extractor Fan</h3>
-      <div>
-        <p>
-          <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
-        </p>
-      </div>
+      <p>
+        <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
+      </p>
 
-      <div class="mt-1 ">
-        <p>
-          <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
-        </p>
+      <p>
+        <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
+      </p>
+      <p>
 
-        <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanSpeedDec()" class="btn btn-primary mb-1">
-          <span *ngIf="btn1Loading" class="spinner-border spinner-border-sm mr-1"></span>
-          - </button>
-        <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanSpeedInc()" class="ml-1 btn btn-primary mb-1">
-          <span *ngIf="btn2Loading" class="spinner-border spinner-border-sm mr-1"></span>
-          +</button> <br/>
-        <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanFullSpeed()"
-          class="btn btn-success ">
-          <span *ngIf="btn3Loading" class="spinner-border spinner-border-sm mr-1"></span>
-          100%</button>
-        <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanStop()"
-          class="btn btn-danger ">
-          <span *ngIf="btn4Loading" class="spinner-border spinner-border-sm mr-1"></span>
-          0%</button>
-
-
-      </div> <br />
-
+        <img class="images" style src="assets/pollution.png" width="36" height="36" />
+        {{airVoc}} ppm
+      </p>
     </div>
 
     <div class="col-6" style="color: white;">

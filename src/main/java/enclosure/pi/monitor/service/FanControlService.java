@@ -1,6 +1,5 @@
 package enclosure.pi.monitor.service;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +18,8 @@ import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ExtractorFan;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
 
@@ -27,7 +28,6 @@ public class FanControlService {
 	private static final Logger logger = LogManager.getLogger(FanControlService.class);
 
 	private static final Map<Integer, Integer> speedMap = createMap();
-	private int extrFanSpeed = -1;
 
 
 	@Path("extrSpeed") //set extractor fan speed
@@ -60,7 +60,7 @@ public class FanControlService {
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 			exFan.setFanSpeed(speed);
 
-			this.extrFanSpeed = speed; //saving to use in recall.
+			SharedData.getInstance().putSensor(SensorsData.EXTR_SPEED, speed); //saving to use in recall.
 
 			msg  = new Message(MessageType.SUCCESS, speedString);
 
@@ -108,7 +108,7 @@ public class FanControlService {
 	public Response getFanSpeed() {
 		logger.debug("Getting getFanSpeed ");
 
-		return Response.ok().entity(this.extrFanSpeed).build();
+		return Response.ok().entity(SharedData.getInstance().getSensorAsInt(SensorsData.EXTR_SPEED)) .build();
 	}
 
 	private static Map<Integer, Integer> createMap() {

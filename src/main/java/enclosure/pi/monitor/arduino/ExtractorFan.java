@@ -47,7 +47,7 @@ public class ExtractorFan implements Command {
 	}
 
 	public enum ExtractorFanCmd{
-		GET_RPM("r"), SET_SPEED("s");
+		GET_RPM(GET_RPM_CMD), SET_SPEED(SET_SPEED_CMD);
 
 		private String cmdStr = "";
 		private ExtractorFanCmd(String cmdStr) {

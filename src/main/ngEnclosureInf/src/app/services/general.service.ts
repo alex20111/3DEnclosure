@@ -16,4 +16,20 @@ export class GeneralService {
    return this.http.get<Message>('http://localhost:8080/web/general/shutdown');
 
   }
+
+  dashBoard(): Observable<DashBoard | Message>{
+
+    return this.http.get<DashBoard | Message>('http://localhost:8080/web/general/dashboard');
+ 
+
+  }
+}
+
+export interface DashBoard{
+    extracFanRPM : number;
+	  extracFanSpeed : number;
+	  temperature : string;
+	  lightOn : boolean;
+    airQualityCo2 : string;
+    airQualityVoc : string;
 }

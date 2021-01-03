@@ -1,0 +1,19 @@
+<h2 style="color: white;"> Extractor Fan </h2>
+<p *ngIf="error">
+    <ngb-alert type="danger" (closed)="error ='' ">
+        {{error}}
+    </ngb-alert>
+</p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12" style="color: white;   border-style: solid;  border-color: white;">
+            <p>
+                <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
+              </p>
+            <p>
+                <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
+              </p>
+        </div>
+    </div>
+</div>

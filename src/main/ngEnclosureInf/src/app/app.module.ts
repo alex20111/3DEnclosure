@@ -7,11 +7,15 @@ import { LcdDashboardComponent } from './lcd-dashboard/lcd-dashboard.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { ExtractorComponent } from './extractor/extractor.component';
+import { LightsComponent } from './lights/lights.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    LcdDashboardComponent
+    LcdDashboardComponent,
+    ExtractorComponent,
+    LightsComponent
   ],
   imports: [
     BrowserModule,

@@ -1,17 +1,25 @@
 package enclosure.pi.monitor.listener;
 
 
+import java.io.IOException;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import enclosure.pi.monitor.arduino.ArduinoHandler;
+import enclosure.pi.monitor.arduino.Lights.LightAction;
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
+import enclosure.pi.monitor.thread.MonitorThread;
+
 
 public class InitManager implements ServletContextListener    {
 
 	private static final Logger logger = LogManager.getLogger(InitManager.class);
-	
+
 
 	/* Application Startup Event */
 	public void contextInitialized(ServletContextEvent ce) 
@@ -20,24 +28,16 @@ public class InitManager implements ServletContextListener    {
 
 		logger.info("Starting thread manager");
 
-//		try {
-//			ThreadManager tm = ThreadManager.getInstance();
+		try {
+			ArduinoHandler ah = ArduinoHandler.getInstance();
 //
-//			if (runningOnPi) {
-//				long sampleRate = 1000 * 60 * 5; // 5 min
-//				logger.info("Starting temperature with sample rate: " + sampleRate + " in millis. In min: " + ( (sampleRate /1000) / 60) );
-//				tm.startTemperature(sampleRate);
-//				
-//				SerialHandler sh = SerialHandler.getInstance();
-//				sh.startCeiscoSerial();
-//				sh.startTeensySerial();
-//				
-//			}else {
-//				logger.info("RUNNING IN DEV MODE");
-//			}
-//		}catch(Exception ex) {
-//			ex.printStackTrace();			
-//		}
+			ah.openSerialConnection();
+			
+			new Thread(new MonitorThread(2000)).start();
+
+		}catch(Exception ex) {
+			logger.error("error in contextInitialized", ex);		
+		}
 
 		logger.debug("contextInitialized end");
 	}

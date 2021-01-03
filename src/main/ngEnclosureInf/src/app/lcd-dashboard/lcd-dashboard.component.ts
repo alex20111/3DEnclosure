@@ -1,11 +1,11 @@
-import { GeneralService } from './../services/general.service';
+import { GeneralService, DashBoard } from './../services/general.service';
 import { TemperatureService } from './../services/temperature.service';
 import { FanService } from './../services/fan.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { LightService } from '../services/light.service';
-import { faThermometerHalf, faLightbulb, faFan , faTachometerAlt, faCog} from '@fortawesome/free-solid-svg-icons';
-import {NgbDropdownConfig} from '@ng-bootstrap/ng-bootstrap';
+import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
+import { NgbDropdownConfig } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-lcd-dashboard',
@@ -14,17 +14,8 @@ import {NgbDropdownConfig} from '@ng-bootstrap/ng-bootstrap';
 })
 export class LcdDashboardComponent implements OnInit, OnDestroy {
 
-  extrFanStatus: string = '';
-  extrFanRpm: string = '';
+  extrFanRpm: number = 0;
   extrSpeed: number = 0;
-  extrSpeedLoading: boolean = false;
-  btn1Loading: boolean = false;
-  btn2Loading: boolean = false;
-  btn3Loading: boolean = false;
-  btn4Loading: boolean = false;
- 
-  disableIncBtn: boolean = false;
-  disableDecBtn: boolean = false;
 
   lightOn: boolean = false;
   lightTest: string = "OFF";
@@ -32,11 +23,14 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   encTemperature: string = "99";
 
+  //air quality
+  airVoc: string = "";
+
   //alerts
   error: string = '';
   message: string = '';
 
-  fanRpmtimer: Subscription | undefined;
+  dashBoardTimer: Subscription | undefined;
   temp1Timer: Subscription | undefined;
 
   //icons
@@ -47,12 +41,34 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faCog = faCog;
 
   constructor(private fanService: FanService,
-     private lightService: LightService,
-      private temperatureService: TemperatureService,
-      private generalService: GeneralService) { }
+    private lightService: LightService,
+    private temperatureService: TemperatureService,
+    private generalService: GeneralService) { }
 
 
   ngOnInit(): void {
+
+
+
+    this.dashBoardTimer = timer(2000, 6000).subscribe(val => {
+      this.generalService.dashBoard().subscribe(dashboard => {
+        const dboard: DashBoard = dashboard as DashBoard;
+        this.extrFanRpm = dboard.extracFanRPM;
+        this.extrSpeed = dboard.extracFanSpeed;
+        this.lightOn = dboard.lightOn;
+        this.encTemperature = dboard.temperature;
+        this.airVoc = dboard.airQualityVoc;
+      },
+        err => {
+          this.showError(err);
+        });
+    });
+
+
+
+    ///////////////////replace all this with a dashboard timer values.. one query to fetch all the values for the dashboard. 
+
+
     // this.fanRpmtimer = timer(2000, 6000).subscribe(val => {
     //   this.fanService.getFanRmp().subscribe(rpm => {
     //     this.extrFanRpm = rpm;
@@ -74,6 +90,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     //     });
     // });
 
+    /////////////   get the dashboard 
+
     // //get the fan speed to set the inital values
     // this.fanService.getFanSpeed().subscribe(speed => {
     //   if (speed === -1) {
@@ -93,103 +111,16 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     //     this.showError(err);
     //   }
     // );
+
+    ////////////////////////
   }
 
   ngOnDestroy(): void {
-    this.fanRpmtimer?.unsubscribe();
+    this.dashBoardTimer?.unsubscribe();
     this.temp1Timer?.unsubscribe();
   }
 
-  extrFanSpeedDec() {
-    //re-enable increase button
-    this.disableIncBtn = false;
 
-    let extTemp = this.extrSpeed;
-    if (extTemp > 0) {
-      extTemp -= 10;
-    }
-
-    if (extTemp === 0) {
-      extTemp = 0;
-      this.disableDecBtn = true;
-    }
-    this.extrSpeedLoading = true;
-    this.btn1Loading = true;
-    this.fanService.setFanSpeed(extTemp).subscribe(
-      result => {
-        this.extrSpeed = parseInt(result.message);
-        this.extrSpeedLoading = false;
-        this.btn1Loading = false;
-      }, error => {
-        this.showError(error);
-      });
-
-
-  }
-  extrFanSpeedInc() {
-    this.disableDecBtn = false;
-
-    let extTemp = this.extrSpeed;
-    if (extTemp >= 0 && extTemp < 100) {
-      extTemp += 10;
-    } else if (extTemp < 0) {
-      extTemp = 0;
-    }
-
-    if (!this.disableIncBtn) {
-      this.extrSpeedLoading = true;
-      this.btn2Loading = true;
-      this.fanService.setFanSpeed(extTemp).subscribe(
-        result => {
-          console.log(" this.extrSpeed: ", result);
-          this.extrSpeed = parseInt(result.message);
-          this.extrSpeedLoading = false;
-          this.btn2Loading = false;
-        }, error => {
-          this.showError(error);
-        });
-    }
-    // disable if we are at 100%
-    if (extTemp === 100) {
-      this.disableIncBtn = true;
-    }
-  }
-  extrFanFullSpeed(){
-    if (!this.disableIncBtn) {
-      this.extrSpeedLoading = true;
-      this.btn3Loading = true;
-      this.fanService.setFanSpeed(100).subscribe(
-        result => {
-          console.log(" this.extrSpeed: ", result);
-          this.extrSpeed = parseInt(result.message);
-          this.extrSpeedLoading = false;
-          this.btn3Loading = false;
-        }, error => {
-          this.showError(error);
-        });
-        this.disableIncBtn = true;
-        this.disableDecBtn = false;
-    }
-    
-
-  }
-  extrFanStop(){
-    if (!this.disableDecBtn) {
-      this.extrSpeedLoading = true;
-      this.btn4Loading = true;
-      this.fanService.setFanSpeed(0).subscribe(
-        result => {
-          console.log(" this.extrSpeed: ", result);
-          this.extrSpeed = parseInt(result.message);
-          this.extrSpeedLoading = false;
-          this.btn4Loading = false;
-        }, error => {
-          this.showError(error);
-        });
-        this.disableDecBtn = true;
-        this.disableIncBtn = false;
-    }
-  }
 
   light() {
     this.lightOn = !this.lightOn;
@@ -224,21 +155,16 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   showError(httpError: any): void {
     this.error = httpError.message + ' ' + httpError.error.error;
-    this.extrSpeedLoading = false;
-    this.btn1Loading = false;
-    this.btn2Loading = false;
-    this.btn3Loading = false;
-    this.btn4Loading = false;
     console.log("httpError", httpError);
   }
 
-//shutdown the system.
-  shutDown(){
+  //shutdown the system.
+  shutDown() {
     this.generalService.shutdownSystem().subscribe(success => {
       this.message = success.message;
     },
-    httpError => {
-      this.error = httpError.message + ' ' + httpError.error.error;
-    })
+      httpError => {
+        this.error = httpError.message + ' ' + httpError.error.error;
+      })
   }
 }

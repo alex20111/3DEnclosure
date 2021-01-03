@@ -2,15 +2,9 @@ package enclosure.pi.monitor.arduino;
 
 import java.io.IOException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class Lights implements Command{
-	private static final Logger logger = LogManager.getLogger(Lights.class);
 	
-	private final String LIGHT_COMMAND = "l";
-
 
 	private LightAction lightAction;
 	private ArduinoHandler ah;
@@ -24,11 +18,16 @@ public class Lights implements Command{
 	public void triggerLight() throws IllegalStateException, IOException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(START_MARKER);
-		sb.append(LIGHT_COMMAND);
+		sb.append(LIGHTS_CMD);
 		sb.append(this.lightAction.getAction());		
 		sb.append(END_MARKER);
 		ah.writeToSerial(sb.toString());
 	}
+	public LightAction getLightStatus() 
+	{
+		return lightAction;
+	}
+	
 	
 	public enum LightAction{
 		ON(1), OFF(0);
@@ -43,5 +42,7 @@ public class Lights implements Command{
 			return this.action;
 		}
 	}
+	
+	
 
 }
