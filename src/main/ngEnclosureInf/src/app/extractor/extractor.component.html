@@ -7,13 +7,45 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-12" style="color: white;   border-style: solid;  border-color: white;">
+        <div class="col-12" >
+           <button class="btn btn-success mr-2" style="color: white;" (click)="autoFanBtn()" 
+           [ngClass]="{ 'btn-success': autoExtrFan , 'btn-danger': !autoExtrFan}" >Fan auto: {{autoExtrFanText}}</button> 
+           <button type="button" class="btn btn-primary mr-2" placement="bottom"
+                    ngbPopover="It will control the fan based on air quality and heat inside the enclosure. See config page to set data." popoverTitle="Auto fan"
+                    >
+                    <fa-icon class="mr-1 "  [icon]="faQuestion"></fa-icon>
+            </button>
+        </div>
+        <div class="col-4 " style="color: white;  ">
             <p>
                 <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
               </p>
             <p>
                 <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
               </p>
+
+        </div>
+        <div class="col-8 mt-1">
+            
+            <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanSpeedDec()" class="btn btn-primary mb-1 mr-1">
+                <span *ngIf="btn1Loading" class="spinner-border spinner-border-sm mr-1"></span>
+                - </button> 
+              <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanSpeedInc()" class=" btn btn-primary mb-1">
+                <span *ngIf="btn2Loading" class="spinner-border spinner-border-sm mr-1"></span>
+                +</button> <br/>
+             <button [disabled]="extrSpeedLoading || disableDecBtn" (click)="extrFanStop()"
+                class="btn btn-danger mr-1 ">
+                <span *ngIf="btn4Loading" class="spinner-border spinner-border-sm"></span>
+                0%</button>
+              <button [disabled]="extrSpeedLoading || disableIncBtn" (click)="extrFanFullSpeed()"
+                class="btn btn-success ">
+                <span *ngIf="btn3Loading" class="spinner-border spinner-border-sm"></span>
+                100%</button>
+             
+        </div>
+        <div class="col-12" style="color: white;" class="bottom-button">
+            <button [disabled]="extrSpeedLoading" routerLink="/" class="btn btn-primary mb-1">
+                Back </button>
         </div>
     </div>
 </div>

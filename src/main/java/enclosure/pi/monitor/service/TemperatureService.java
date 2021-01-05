@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.TemperatureEnclosure;
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
 @Path("temperature")
@@ -34,6 +36,8 @@ public class TemperatureService {
 		try {
 			TemperatureEnclosure tmp = new TemperatureEnclosure();
 			temperature = tmp.getTemperature();
+			
+			SharedData.getInstance().putSensor(SensorsData.ENC_TEMP, temperature);
 
 			return Response.ok().entity(temperature).build();
 

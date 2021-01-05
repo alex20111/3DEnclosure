@@ -89,6 +89,8 @@ public class FanControlService {
 		try {
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.GET_RPM);
 			rpmVal = exFan.getRpm();
+			
+			SharedData.getInstance().putSensor(SensorsData.EXTR_RPM, rpmVal); //saving to use in recall.
 
 			return Response.ok().entity(rpmVal).build();
 
@@ -102,7 +104,7 @@ public class FanControlService {
 
 		return Response.status(status).entity(msg).build();	
 	}
-	@Path("getExtrFanSpeed") // get extractor fan RPM
+	@Path("getExtrFanSpeed") // get extractor fan speed ( by percent )
 	@GET
 	@Produces(MediaType.TEXT_PLAIN)
 	public Response getFanSpeed() {

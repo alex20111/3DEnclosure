@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { faFan, faTachometerAlt, faThermometerHalf } from '@fortawesome/free-solid-svg-icons';
+import { faFan, faQuestion, faTachometerAlt, faThermometerHalf } from '@fortawesome/free-solid-svg-icons';
 import { Subscription } from 'rxjs';
 import { FanService } from '../services/fan.service';
 
@@ -24,11 +24,16 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   disableIncBtn: boolean = false;
   disableDecBtn: boolean = false;
 
+  autoExtrFan: boolean = false;
+  autoExtrFanText: string = 'OFF';
+
+
   error: string = '';
 
   //icons
   faTachometerAlt = faTachometerAlt;
   faFan = faFan;
+  faQuestion = faQuestion;
 
   constructor(private fanService: FanService) { }
   ngOnDestroy(): void {
@@ -36,6 +41,10 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+
+    //get config info for extractor fan status to set the button true or false...  
+
+
     //   //get the fan speed to set the inital values
     // this.fanService.getFanSpeed().subscribe(speed => {
     //   if (speed === -1) {
@@ -156,6 +165,11 @@ export class ExtractorComponent implements OnInit, OnDestroy {
       this.disableDecBtn = true;
       this.disableIncBtn = false;
     }
+  }
+
+  autoFanBtn(){
+    this.autoExtrFan = !this.autoExtrFan;
+    this.autoExtrFanText = 'ON';
   }
 
   showError(httpError: any): void {

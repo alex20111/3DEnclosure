@@ -9,13 +9,15 @@ import { HttpClientModule } from '@angular/common/http';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ExtractorComponent } from './extractor/extractor.component';
 import { LightsComponent } from './lights/lights.component';
+import { ConfigComponent } from './config/config.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     LcdDashboardComponent,
     ExtractorComponent,
-    LightsComponent
+    LightsComponent,
+    ConfigComponent
   ],
   imports: [
     BrowserModule,

@@ -7,8 +7,8 @@
     <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
       <button ngbDropdownItem>Print</button>
       <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
-      <button ngbDropdownItem>Lights</button>
-      <button ngbDropdownItem>Config</button>
+      <button ngbDropdownItem routerLink="/lights">Lights</button>
+      <button ngbDropdownItem routerLink="/config">Config</button>
       <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
     </div>
   </div>
@@ -31,7 +31,7 @@
 </p>
 <div class="container">
   <div class="row">
-    <div class="col-6" style="color: white;   border-style: solid;  border-color: white;">
+    <div class="col-5 ml-1" style="color: white;   border-style: solid;  border-color: white;">
 
       <p>
         <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
@@ -47,16 +47,12 @@
       </p>
     </div>
 
-    <div class="col-6" style="color: white;">
+    <div class="col-6 ml-2" style="color: white;  border-style: solid;  border-color: white;">
       <div>
-        <span style="font-size: 3em; ">
+        <span style="font-size: 3em; " [ngStyle]="{'color': lightColor}">   
           <fa-icon [icon]="faLightbulb"></fa-icon>
         </span>
-        <button [disabled]="lightLoading" [ngClass]="{ 'btn-success': lightOn , 'btn-danger': !lightOn}"
-          (click)="light()" class="btn ml-2 ">
-          <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
-          {{lightTest}}
-        </button>
+        
       </div>
       <span style="font-size: 3em; ">
         <p class="ml-2">

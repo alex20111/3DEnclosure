@@ -1,6 +1,7 @@
 package enclosure.pi.monitor.listener;
 
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletContextEvent;
@@ -28,13 +29,25 @@ public class InitManager implements ServletContextListener    {
 
 		logger.info("Starting thread manager");
 
-		try {
-			ArduinoHandler ah = ArduinoHandler.getInstance();
-//
-			ah.openSerialConnection();
-			
-			new Thread(new MonitorThread(2000)).start();
+		boolean prod = true;
+		File localTest = new File("C:\\dev\\jetty\\devTest.txt");
 
+		if (localTest.exists()) {
+			prod = false;
+		}
+
+		try {
+
+			if (prod) {
+				ArduinoHandler ah = ArduinoHandler.getInstance();
+				//
+				ah.openSerialConnection();
+
+				new Thread(new MonitorThread(2000)).start();
+			}else {
+				SharedData.getInstance().setRunningInProd(false);
+				logger.info("!!!!!!!! in testing mode !!!!!!!!!!");
+			}
 		}catch(Exception ex) {
 			logger.error("error in contextInitialized", ex);		
 		}

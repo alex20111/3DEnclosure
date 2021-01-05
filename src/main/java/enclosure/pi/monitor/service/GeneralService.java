@@ -50,7 +50,7 @@ public class GeneralService {
 			db.setExtracFanRPM(sd.getSensorAsInt(SensorsData.EXTR_RPM));
 			db.setExtracFanSpeed(sd.getSensorAsInt(SensorsData.EXTR_SPEED));
 			
-			LightAction la = (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS);
+			LightAction la = sd.getSensor(SensorsData.LIGHT_STATUS) != null ? (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS) : LightAction.OFF;
 			db.setLightOn(la == LightAction.ON ?  true: false);
 			db.setTemperature(sd.getSensorAsString(SensorsData.ENC_TEMP));
 
@@ -81,7 +81,7 @@ public class GeneralService {
 
 		try {
 			if (isServerShuttingDown) {
-				msg = new Message(MessageType.SUCCESS, "Server already shutting down");				
+				msg = new Message(MessageType.WARN, "Server already shutting down");				
 			}else {
 				isServerShuttingDown = true;
 				msg = new Message(MessageType.SUCCESS, "Shutting down in 20 sec");

@@ -1,1 +1,35 @@
-<p>lights works!</p>
+<h2 style="color: white;"> Lights</h2>
+  
+  <p *ngIf="error">
+    <ngb-alert type="danger" (closed)="error ='' ">
+      {{error}}
+    </ngb-alert>
+  </p>
+  <p *ngIf="message">
+    <ngb-alert type="success" (closed)="message = ''">
+      {{message}}
+    </ngb-alert>
+  </p>
+  <div class="container">
+    <div class="row">     
+  
+      <div class="col-6" style="color: white;">
+        <div>
+          <span style="font-size: 3em; " [ngStyle]="{'color': lightColor}" >   
+            <fa-icon [icon]="faLightbulb"></fa-icon>
+          </span>
+          <button [disabled]="lightLoading" [ngClass]="{ 'btn-success': lightOn , 'btn-danger': !lightOn}"
+            (click)="light()" class="btn ml-2 ">
+            <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
+            {{lightTest}}
+          </button>
+        </div>
+        
+      </div>
+  
+      <div class="col-12" style="color: white;" class="bottom-button">
+        <button [disabled]="lightLoading" routerLink="/" class="btn btn-primary mb-1">
+            Back </button>
+    </div>
+    </div>
+  </div>
