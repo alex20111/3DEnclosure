@@ -26,6 +26,7 @@ export class GeneralService {
 }
 
 export interface DashBoard{
+    extrFanOnAuto: boolean;
     extracFanRPM : number;
 	  extracFanSpeed : number;
 	  temperature : string;

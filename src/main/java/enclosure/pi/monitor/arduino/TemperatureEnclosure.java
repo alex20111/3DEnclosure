@@ -3,6 +3,9 @@ package enclosure.pi.monitor.arduino;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
+
 public class TemperatureEnclosure implements Command{
 	
 
@@ -20,6 +23,8 @@ public class TemperatureEnclosure implements Command{
 		ah.writeToSerial(sb.toString());
 		
 		String temp = ah.getEncTempQueue().poll(4000, TimeUnit.MILLISECONDS);
+		
+		SharedData.getInstance().putSensor(SensorsData.ENC_TEMP, temp);
 		
 		return temp;
 	}

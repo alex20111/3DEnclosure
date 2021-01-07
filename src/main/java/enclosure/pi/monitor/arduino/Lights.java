@@ -2,6 +2,9 @@ package enclosure.pi.monitor.arduino;
 
 import java.io.IOException;
 
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
+
 
 public class Lights implements Command{
 	
@@ -22,6 +25,8 @@ public class Lights implements Command{
 		sb.append(this.lightAction.getAction());		
 		sb.append(END_MARKER);
 		ah.writeToSerial(sb.toString());
+		
+		SharedData.getInstance().putSensor(SensorsData.LIGHT_STATUS, getLightStatus());
 	}
 	public LightAction getLightStatus() 
 	{

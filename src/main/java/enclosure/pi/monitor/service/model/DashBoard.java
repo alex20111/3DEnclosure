@@ -1,6 +1,7 @@
 package enclosure.pi.monitor.service.model;
 
 public class DashBoard {
+	private boolean extrFanOnAuto = false;
 	private int extracFanRPM = -1;
 	private int extracFanSpeed = -1;
 	private String temperature = "";
@@ -8,6 +9,12 @@ public class DashBoard {
 	private String airQualityCo2 = "";
 	private String airQualityVoc = "";
 	
+	public boolean isExtrFanOnAuto() {
+		return extrFanOnAuto;
+	}
+	public void setExtrFanOnAuto(boolean extrFanOnAuto) {
+		this.extrFanOnAuto = extrFanOnAuto;
+	}
 	public int getExtracFanRPM() {
 		return extracFanRPM;
 	}

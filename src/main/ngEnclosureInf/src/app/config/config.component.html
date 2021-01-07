@@ -1,1 +1,44 @@
-<p>config works!</p>
+<h2 style="color: white;">Config</h2>
+
+<p *ngIf="error">
+    <ngb-alert type="danger" (closed)="error ='' ">
+        {{error}}
+    </ngb-alert>
+</p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-6 " style="color: white;">
+            <form [formGroup]="configForm" (submit)="submitForm()">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
+                <label class="form-check-label" for="defaultCheck1">
+                    Extractor Fan On Auto
+                </label>
+            </div>
+            <div class="form-group ml-2">
+                <label>VOC PPM max:</label>
+                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_refresh" /> <fa-icon class="mr-1 " (click)="openFormModal(1)" [icon]="faKeyboard"></fa-icon>
+            </div>
+            <div class="form-group ml-2 ">
+                <label>Temp Max:</label>
+                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_refresh1" (click)="openFormModal(2)"/>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="alarmCheck">
+                <label class="form-check-label" for="alarmCheck">
+                    Activate fire alarm
+                </label>
+            </div>
+            <div class="form-group">
+                <label>phone number for SMS</label>
+                <input type="text" class="form-control form-control-sm" formControlName="frm_refresh2"  (click)="openFormModal(3)"/>
+            </div>
+            <button class="btn btn-success">Save</button>
+            <button class="btn btn-success">Cancel</button>
+        </form>
+        
+        </div>
+    
+    </div>
+</div>

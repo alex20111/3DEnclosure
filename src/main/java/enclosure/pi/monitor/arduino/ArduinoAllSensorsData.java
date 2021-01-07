@@ -14,15 +14,6 @@ public class ArduinoAllSensorsData implements Command{
 private ArduinoHandler ah;
 private SharedData sd;
 
-//	private String encTemp = "";
-//	private int extrRPM	   = -1;
-//	private String airCo2 = "";
-//	private String airVoc = "";
-//	
-//	private String smoke = "";
-//	private String flame1 = "";
-//	private String flame2 = "";
-//	private String flame3 = "";
 	
 	public ArduinoAllSensorsData() {
 		ah  = ArduinoHandler.getInstance();

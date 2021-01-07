@@ -1,5 +1,6 @@
 package enclosure.pi.monitor.common;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -13,13 +14,10 @@ public class SharedData {
 	private static SharedData sharedData;
 	private boolean runningInProd = true;
 	
-	private Map<SensorsData, Object> sensorsData = new WeakHashMap<>();
+	private Map<SensorsData, Object> sensorsData = new HashMap<>();
 
 	private Map<String, Object> shareableDataMap = null;
 
-	
-	//TODO: config class here
-	
 	
 	public static SharedData getInstance() {
 		if (sharedData == null) {
@@ -37,7 +35,7 @@ public class SharedData {
 	}
 	
 	
-	public void putSensor(SensorsData sensor, Object value) {
+	public synchronized void putSensor(SensorsData sensor, Object value) {
 		this.sensorsData.put(sensor, value);
 	}
 	

@@ -104,8 +104,9 @@ public class ArduinoHandler {
 			public void dataReceived(SerialDataEvent event) {
 				try {
 					String eventString =  event.getAsciiString();
+//					logger.info("eventString: " + eventString);
 
-					if ("ready".equalsIgnoreCase(eventString)) {
+					if ("Ready".equalsIgnoreCase(eventString.trim())) {
 						arduinoReady = true;
 						logger.info("!! Arduino READY !!");
 					} else { 

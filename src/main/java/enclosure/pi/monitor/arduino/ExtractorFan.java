@@ -6,6 +6,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import enclosure.pi.monitor.common.SensorsData;
+import enclosure.pi.monitor.common.SharedData;
+
 public class ExtractorFan implements Command {
 
 	private static final Logger logger = LogManager.getLogger(ExtractorFan.class);
@@ -30,6 +33,9 @@ public class ExtractorFan implements Command {
 		try {
 			ah.writeToSerial(sb.toString());
 			rpmVal = ah.extFanRpmQueue().poll(4000, TimeUnit.MILLISECONDS);
+			
+			SharedData.getInstance().putSensor(SensorsData.EXTR_RPM, rpmVal); //saving to use in recall.
+			
 		} catch (Exception e) {
 			logger.error("Timeout while waiting in the queue" , e);
 		} 
@@ -44,6 +50,8 @@ public class ExtractorFan implements Command {
 		sb.append(speed);
 		sb.append(END_MARKER);
 		ah.writeToSerial(sb.toString());
+		
+		SharedData.getInstance().putSensor(SensorsData.EXTR_SPEED, speed); //saving to use in recall.
 	}
 
 	public enum ExtractorFanCmd{

@@ -1,5 +1,11 @@
 package enclosure.pi.monitor.thread;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,6 +31,15 @@ public class MonitorThread implements Runnable{
 
 	@Override
 	public void run() {
+		
+		File dataFile = new File("/opt/jetty/dataCsv.txt");
+		BufferedWriter writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(dataFile));
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 		SharedData sd = SharedData.getInstance(); 
 		sd.putSensor(SensorsData.EXTR_SPEED, 0); //init value that we know that it ill be 0 at start.
@@ -36,7 +51,10 @@ public class MonitorThread implements Runnable{
 				ArduinoAllSensorsData data = new ArduinoAllSensorsData();
 				data.requestAllSensorInfo();
 				
+				String writeTofile = LocalDateTime.now().toString() + "," +sd.getSensorAsString(SensorsData.AIR_VOC) + "," + sd.getSensorAsString(SensorsData.AIR_CO2) + "\n";
+				writer.write(writeTofile);
 				
+				writer.flush();
 				
 				Thread.sleep(delay);
 			} catch (Exception e) {

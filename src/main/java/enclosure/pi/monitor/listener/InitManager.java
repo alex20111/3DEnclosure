@@ -2,7 +2,6 @@ package enclosure.pi.monitor.listener;
 
 
 import java.io.File;
-import java.io.IOException;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
@@ -12,8 +11,11 @@ import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ArduinoHandler;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
+import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
+import enclosure.pi.monitor.db.entity.Config;
+import enclosure.pi.monitor.db.sql.ConfigSql;
 import enclosure.pi.monitor.thread.MonitorThread;
 
 
@@ -48,6 +50,11 @@ public class InitManager implements ServletContextListener    {
 				SharedData.getInstance().setRunningInProd(false);
 				logger.info("!!!!!!!! in testing mode !!!!!!!!!!");
 			}
+			
+			
+			ConfigSql sql = new ConfigSql();
+			sql.createConfigTable();
+			
 		}catch(Exception ex) {
 			logger.error("error in contextInitialized", ex);		
 		}

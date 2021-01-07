@@ -24,26 +24,26 @@
     {{message}}
   </ngb-alert>
 </p>
-<p *ngIf="message">
+<!-- <p *ngIf="message">
   <ngb-alert type="info" [dismissible]="false">
     Printing. time remaining: 2:45.33
   </ngb-alert>
-</p>
+</p> -->
 <div class="container">
   <div class="row">
     <div class="col-5 ml-1" style="color: white;   border-style: solid;  border-color: white;">
 
       <p>
-        <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{extrFanRpm}}
-      </p>
+        <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{dashBoard?.extracFanRPM}} - {{ dashBoard?.extrFanOnAuto == true ? 'Auto' : 'Manual' }}
+      </p> 
 
       <p>
-        <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{extrSpeed}}%
+        <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon> {{dashBoard?.extracFanSpeed}}%
       </p>
       <p>
 
         <img class="images" style src="assets/pollution.png" width="36" height="36" />
-        {{airVoc}} ppm
+        {{dashBoard?.airQualityVoc}} ppm
       </p>
     </div>
 
@@ -56,7 +56,7 @@
       </div>
       <span style="font-size: 3em; ">
         <p class="ml-2">
-          <fa-icon [icon]="faThermometerHalf"></fa-icon> {{encTemperature}}
+          <fa-icon [icon]="faThermometerHalf"></fa-icon> {{dashBoard?.temperature}}
         </p>
       </span>
     </div>

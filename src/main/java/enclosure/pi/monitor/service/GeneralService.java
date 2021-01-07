@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
+import enclosure.pi.monitor.db.sql.ConfigSql;
 import enclosure.pi.monitor.service.model.DashBoard;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
@@ -41,7 +42,9 @@ public class GeneralService {
 		try {
 			
 
-			SharedData sd = SharedData.getInstance();			
+			final SharedData sd = SharedData.getInstance();	
+			final ConfigSql sql = new ConfigSql();
+			
 			
 			DashBoard db = new DashBoard();
 
@@ -53,6 +56,7 @@ public class GeneralService {
 			LightAction la = sd.getSensor(SensorsData.LIGHT_STATUS) != null ? (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS) : LightAction.OFF;
 			db.setLightOn(la == LightAction.ON ?  true: false);
 			db.setTemperature(sd.getSensorAsString(SensorsData.ENC_TEMP));
+			db.setExtrFanOnAuto(sql.loadConfig().isExtractorAuto());
 
 
 			return Response.ok().entity(db).build();

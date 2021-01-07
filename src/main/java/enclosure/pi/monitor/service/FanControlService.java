@@ -58,9 +58,7 @@ public class FanControlService {
 			logger.debug("new Speed: " + speed);
 
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
-			exFan.setFanSpeed(speed);
-
-			SharedData.getInstance().putSensor(SensorsData.EXTR_SPEED, speed); //saving to use in recall.
+			exFan.setFanSpeed(speed);		
 
 			msg  = new Message(MessageType.SUCCESS, speedString);
 
@@ -90,8 +88,6 @@ public class FanControlService {
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.GET_RPM);
 			rpmVal = exFan.getRpm();
 			
-			SharedData.getInstance().putSensor(SensorsData.EXTR_RPM, rpmVal); //saving to use in recall.
-
 			return Response.ok().entity(rpmVal).build();
 
 		} catch (Exception e) {
