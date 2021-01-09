@@ -6,8 +6,8 @@
 				pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
 		</Console>
 		<RollingFile   name="roll-by-size" 
-		  fileName="logs/piModule.log"
-		  filePattern="logs/piModule.%i.log.gz" 
+		  fileName="logs/3dEnclosure.log"
+		  filePattern="logs/3dEnclosure.%i.log.gz" 
 		  ignoreExceptions="false">
 		    <PatternLayout>
 		        <Pattern>%d{yyyy-MM-dd HH:mm:ss} %p %c{1.} %m%n</Pattern>

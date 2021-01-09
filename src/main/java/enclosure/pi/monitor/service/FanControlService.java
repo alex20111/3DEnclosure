@@ -58,7 +58,7 @@ public class FanControlService {
 			logger.debug("new Speed: " + speed);
 
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
-			exFan.setFanSpeed(speed);		
+			exFan.setFanSpeed(speed, fanSpeed);		
 
 			msg  = new Message(MessageType.SUCCESS, speedString);
 

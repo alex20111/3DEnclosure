@@ -7,7 +7,7 @@
     <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
       <button ngbDropdownItem>Print</button>
       <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
-      <button ngbDropdownItem routerLink="/lights">Lights</button>
+      <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
       <button ngbDropdownItem routerLink="/config">Config</button>
       <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
     </div>
@@ -51,6 +51,7 @@
       <div>
         <span style="font-size: 3em; " [ngStyle]="{'color': lightColor}">   
           <fa-icon [icon]="faLightbulb"></fa-icon>
+          <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
         </span>
         
       </div>

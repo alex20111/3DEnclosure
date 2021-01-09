@@ -43,7 +43,7 @@ public class ExtractorFan implements Command {
 		return rpmVal;
 	}
 
-	public void setFanSpeed(int speed) throws IllegalStateException, IOException {
+	public void setFanSpeed(int speed, int speedPercent) throws IllegalStateException, IOException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(START_MARKER);
 		sb.append(cmd.getCmdStr());
@@ -51,7 +51,7 @@ public class ExtractorFan implements Command {
 		sb.append(END_MARKER);
 		ah.writeToSerial(sb.toString());
 		
-		SharedData.getInstance().putSensor(SensorsData.EXTR_SPEED, speed); //saving to use in recall.
+		SharedData.getInstance().putSensor(SensorsData.EXTR_SPEED, speedPercent); //saving to use in recall.
 	}
 
 	public enum ExtractorFanCmd{

@@ -8,7 +8,6 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ExtractorComponent } from './extractor/extractor.component';
-import { LightsComponent } from './lights/lights.component';
 import { ConfigComponent } from './config/config.component';
 import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number-keypad-modal.component';
 
@@ -17,7 +16,6 @@ import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number
     AppComponent,
     LcdDashboardComponent,
     ExtractorComponent,
-    LightsComponent,
     ConfigComponent,
     NumberKeypadModalComponent
   ],

@@ -2,6 +2,7 @@ import { GeneralService, DashBoard } from './../services/general.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
+import { LightService } from '../services/light.service';
 
 
 @Component({
@@ -14,6 +15,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   dashBoard!: DashBoard;
 
   lightColor: string = 'red';
+  lightText: string = 'OFF';
+  lightLoading: boolean = false;
 
   //alerts
   error: string = '';
@@ -29,12 +32,12 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faCog = faCog;
 
   constructor(
-    private generalService: GeneralService) { }
+    private generalService: GeneralService, private lightService: LightService) { }
 
 
   ngOnInit(): void {
-  console.log("windows size: " , window.innerWidth);
-  this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
+  // console.log("windows size: " , window.innerWidth);
+  // this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
 
     this.dashBoardTimer = timer(2000, 6000).subscribe(val => {
       this.generalService.dashBoard().subscribe(dshboard => {
@@ -52,6 +55,39 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           this.showError(err);
         });
     });
+  }
+
+  light() {
+    this.dashBoard.lightOn = ! this.dashBoard.lightOn;
+    if ( this.dashBoard.lightOn) {
+      this.lightText = 'ON';
+    } else {
+      this.lightText = 'OFF';
+    }
+
+    this.lightLoading = true;
+    this.lightService.switchLightState(this.dashBoard.lightOn).subscribe(
+      result => {
+        console.log('li:', result);
+        if (result.message === 'true') {
+          this.lightText = 'ON';
+          this.dashBoard.lightOn = true;
+          this.lightColor = 'rgb(12, 247, 12)';
+        } else {
+          this.lightText = 'OFF';
+          this.dashBoard.lightOn= false;
+          this.lightColor = 'red';
+        }
+        this.lightLoading = false;
+      },
+      err => {
+        this.error = err.message + ' ' + err.error.error;
+        this.lightText = 'OFF';
+        this.dashBoard.lightOn = false;
+        this.lightLoading = false;
+      }
+    )
+    // console.log("light: ", this.lightOn);
   }
 
   ngOnDestroy(): void {

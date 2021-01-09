@@ -12,7 +12,8 @@ public class Config {
 	public static final String EXTR_PPM_LIMIT = "extractor_ppm_limit";
 	public static final String ENC_TEMP_LIMIT = "enclosure_temp_limit";
 	public static final String FIRE_ALARM 	= "fire_alarm_auto";
-	public static final String SMS_PHONE 	= "sms_phone_number";	
+	public static final String SMS_PHONE 	= "sms_phone_number";
+	public static final String ARDUINO_SERIAL = "arduino_serial";	
 	
 	private int id = -1;
 	
@@ -22,6 +23,7 @@ public class Config {
 	private int encTempLimit		= -1;
 	private boolean fireAlarmAuto 	= false;
 	private String smsPhoneNumber 	= "";
+	private String arduinoSerialPort 	= "";
 	
 	public Config() {}
 	public Config(ResultSet rs) throws SQLException {
@@ -32,6 +34,7 @@ public class Config {
 		this.encTempLimit = rs.getInt(ENC_TEMP_LIMIT);
 		this.fireAlarmAuto = rs.getBoolean(FIRE_ALARM);
 		this.smsPhoneNumber = rs.getString(SMS_PHONE);
+		this.arduinoSerialPort = rs.getString(ARDUINO_SERIAL);
 		
 	}
 	public int getId() {
@@ -75,6 +78,12 @@ public class Config {
 	}
 	public void setSmsPhoneNumber(String smsPhoneNumber) {
 		this.smsPhoneNumber = smsPhoneNumber;
+	}
+	public String getArduinoSerialPort() {
+		return arduinoSerialPort;
+	}
+	public void setArduinoSerialPort(String arduinoSerialPort) {
+		this.arduinoSerialPort = arduinoSerialPort;
 	}
 	
 	

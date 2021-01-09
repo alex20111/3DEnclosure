@@ -11,18 +11,24 @@
         <div class="col-6 " style="color: white;">
             <form [formGroup]="configForm" (submit)="submitForm()">
             <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="defaultCheck1">
+                <input class="form-check-input" type="checkbox" value="" id="defaultCheck1" (click)="extrFanAuto()" formControlName="frm_extr_auto">
                 <label class="form-check-label" for="defaultCheck1">
                     Extractor Fan On Auto
                 </label>
             </div>
-            <div class="form-group ml-2">
-                <label>VOC PPM max:</label>
-                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_refresh" /> <fa-icon class="mr-1 " (click)="openFormModal(1)" [icon]="faKeyboard"></fa-icon>
+            <div class="ml-2">      
+                      <label>VOC PPM max:</label>
+            <div class="input-group ">               
+                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_voc_ppm_max"/>
+                <div *ngIf="config.extractorAuto" class="input-group-append">
+                     <fa-icon class="input-group-text " (click)="openFormModal(1)" [icon]="faKeyboard" ></fa-icon>
+                </div>
             </div>
+        </div>
+
             <div class="form-group ml-2 ">
                 <label>Temp Max:</label>
-                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_refresh1" (click)="openFormModal(2)"/>
+                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_temp_max" (click)="openFormModal(2)"/>
             </div>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" value="" id="alarmCheck">
@@ -32,10 +38,14 @@
             </div>
             <div class="form-group">
                 <label>phone number for SMS</label>
-                <input type="text" class="form-control form-control-sm" formControlName="frm_refresh2"  (click)="openFormModal(3)"/>
+                <input type="text" class="form-control form-control-sm col-6" formControlName="frm_sms_number"  (click)="openFormModal(3)"/>
+            </div>
+            <div class="form-group">
+                <label>Arduio serial</label>
+                <input type="text" class="form-control form-control-sm col-6" formControlName="frm_arduino_serial"  (click)="openFormModal(3)"/>
             </div>
             <button class="btn btn-success">Save</button>
-            <button class="btn btn-success">Cancel</button>
+            <button class="btn btn-success ml-1" (click)="cancelForm($event)">Cancel</button>
         </form>
         
         </div>

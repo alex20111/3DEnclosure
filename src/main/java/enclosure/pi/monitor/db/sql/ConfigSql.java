@@ -44,6 +44,7 @@ public class ConfigSql {
 				columns.add(new ColumnType(Config.FIRE_ALARM).Boolean());
 				columns.add(new ColumnType(Config.LIGHTS_ON).Boolean());
 				columns.add(new ColumnType(Config.SMS_PHONE).VarChar(30));
+				columns.add(new ColumnType(Config.ARDUINO_SERIAL).VarChar(30));
 
 				con.createTable(Config.TBL_NAME, columns);	
 
@@ -59,6 +60,7 @@ public class ConfigSql {
 				config.setFireAlarmAuto(false);
 				config.setLightsOn(false);
 				config.setSmsPhoneNumber("");
+				config.setArduinoSerialPort("/dev/ttyUSB0");
 
 				add(config);
 
@@ -103,9 +105,29 @@ public class ConfigSql {
 
 		return config;
 	}
+	
+	public void updateConfig(Config config) throws SQLException, ClassNotFoundException {
+		DBConnection con = null;
+		try {
+			con = getConnection();
 
-	public void updateConfig(Config config){
+			int upd = con.buildUpdateQuery(Config.TBL_NAME)
+					.setParameter(Config.ARDUINO_SERIAL, config.getArduinoSerialPort())
+					.setParameter(Config.ENC_TEMP_LIMIT, config.getEncTempLimit())
+					.setParameter(Config.EXTR_AUTO, config.isExtractorAuto())
+					.setParameter(Config.EXTR_PPM_LIMIT, config.getExtrPPMLimit())
+					.setParameter(Config.FIRE_ALARM, config.isFireAlarmAuto())
+					.setParameter(Config.LIGHTS_ON, config.isLightsOn())
+					.setParameter(Config.SMS_PHONE, config.getSmsPhoneNumber())
+					.addUpdWhereClause("Where "+Config.ID+" = :idValue", config.getId()).update();
 
+			if (upd < 1) {
+				throw new SQLException("Error updating User. " + upd);
+			}
+
+		}finally {
+			con.close();
+		}
 	}
 
 	private void add(Config config) throws SQLException, ClassNotFoundException {
@@ -120,6 +142,7 @@ public class ConfigSql {
 			.setParameter(Config.FIRE_ALARM, config.isFireAlarmAuto())
 			.setParameter(Config.LIGHTS_ON, config.isLightsOn())
 			.setParameter(Config.SMS_PHONE, config.getSmsPhoneNumber())
+			.setParameter(Config.ARDUINO_SERIAL, config.getArduinoSerialPort())
 			.add();
 
 
@@ -128,6 +151,8 @@ public class ConfigSql {
 			con.close();
 		}
 	}
+	
+
 
 	private DBConnection getConnection() throws ClassNotFoundException, SQLException{
 
