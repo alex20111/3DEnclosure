@@ -1,3 +1,5 @@
+
+
 <div class="modal-header">
     <h4 class="modal-title">Number Keypad</h4>
     <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
@@ -7,15 +9,28 @@
 <form [formGroup]="numbersForm" (submit)="submitForm()">
     <div class="modal-boy">
         <div class="container">
+            <div class="mb-1 mt-1">
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,1)">1</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,2)">2</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,3)">3</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,4)">4</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,5)">5</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,6)">6</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,7)">7</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,8)">8</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,9)">9</button>
+            <button class="btn btn-success mr-1" (click)="btnEvent($event,0)">0</button>
+        </div>
             <div class="form-group">                
-                <input id="groupName" type="text" formControlName="frm_numbers" class="form-control" />
+                <input id="groupName" type="text" formControlName="frm_numbers" class="form-control  col-4" />
                 <p *ngIf="error" class="alert alert-danger">{{error}}</p>
             </div>            
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-success" [disabled]="!numbers">
-            Ok
+        <!-- <button class="btn btn-success" [disabled]="!numbers"> -->
+            <button class="btn btn-success" >            Ok
         </button>
+        <button class="ml-1 btn btn-primary" (click)="activeModal.dismiss('CancelBtn')">Cancel</button>
     </div>
 </form>

@@ -1,5 +1,6 @@
+import { SessionService } from './../services/session.service';
 import { GeneralService, DashBoard } from './../services/general.service';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ɵConsole } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
 import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
 import { LightService } from '../services/light.service';
@@ -21,6 +22,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   //alerts
   error: string = '';
   message: string = '';
+  printMessage!: Date;
 
   dashBoardTimer: Subscription | undefined;
 
@@ -32,24 +34,34 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faCog = faCog;
 
   constructor(
-    private generalService: GeneralService, private lightService: LightService) { }
+    private generalService: GeneralService, private lightService: LightService, private session: SessionService) { }
 
 
   ngOnInit(): void {
-  // console.log("windows size: " , window.innerWidth);
-  // this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
 
-    this.dashBoardTimer = timer(2000, 6000).subscribe(val => {
+    const printInProgress = this.session.getSharedObject("print");
+    console.log("Print in prog: " , printInProgress);
+    if (printInProgress){
+      
+      this.printMessage = printInProgress as Date;
+      this.session.removeSharedObject("print");
+    }
+  
+
+
+    // console.log("windows size: " , window.innerWidth);
+    // this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
+    this.dashBoardTimer = timer(500, 6000).subscribe(val => {
       this.generalService.dashBoard().subscribe(dshboard => {
+        this.error = '';
         // console.log("get: " , new Date());
-        this.dashBoard = dshboard as DashBoard;
+        this.dashBoard = dshboard;
 
         if (this.dashBoard.lightOn) {
           this.lightColor = 'rgb(12, 247, 12)'
         } else {
           this.lightColor = 'red';
         }
-
       },
         err => {
           this.showError(err);
@@ -58,8 +70,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   }
 
   light() {
-    this.dashBoard.lightOn = ! this.dashBoard.lightOn;
-    if ( this.dashBoard.lightOn) {
+    this.dashBoard.lightOn = !this.dashBoard.lightOn;
+    if (this.dashBoard.lightOn) {
       this.lightText = 'ON';
     } else {
       this.lightText = 'OFF';
@@ -75,7 +87,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           this.lightColor = 'rgb(12, 247, 12)';
         } else {
           this.lightText = 'OFF';
-          this.dashBoard.lightOn= false;
+          this.dashBoard.lightOn = false;
           this.lightColor = 'red';
         }
         this.lightLoading = false;
@@ -86,8 +98,9 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.dashBoard.lightOn = false;
         this.lightLoading = false;
       }
-    )
-    // console.log("light: ", this.lightOn);
+    );
+
+   
   }
 
   ngOnDestroy(): void {
@@ -98,7 +111,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     this.error = httpError.message + ' ' + httpError.error.error;
     console.log("httpError", httpError);
   }
-
   //shutdown the system.
   shutDown() {
     this.generalService.shutdownSystem().subscribe(success => {
@@ -106,6 +118,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     },
       httpError => {
         this.error = httpError.message + ' ' + httpError.error.error;
-      })
+      });
   }
 }

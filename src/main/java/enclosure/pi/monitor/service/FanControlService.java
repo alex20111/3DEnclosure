@@ -1,5 +1,6 @@
 package enclosure.pi.monitor.service;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +21,9 @@ import enclosure.pi.monitor.arduino.ExtractorFan;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
+import enclosure.pi.monitor.db.entity.Config;
+import enclosure.pi.monitor.db.sql.ConfigSql;
+import enclosure.pi.monitor.service.model.ExtrFanParam;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
 
@@ -87,7 +91,7 @@ public class FanControlService {
 		try {
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.GET_RPM);
 			rpmVal = exFan.getRpm();
-			
+
 			return Response.ok().entity(rpmVal).build();
 
 		} catch (Exception e) {
@@ -100,13 +104,54 @@ public class FanControlService {
 
 		return Response.status(status).entity(msg).build();	
 	}
-	@Path("getExtrFanSpeed") // get extractor fan speed ( by percent )
+	@Path("extrFanParam") // get extractor fan speed ( by percent )
 	@GET
-	@Produces(MediaType.TEXT_PLAIN)
-	public Response getFanSpeed() {
-		logger.debug("Getting getFanSpeed ");
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getExtrFanParam() {
+		logger.debug("Getting getExtrFanParam ");
 
-		return Response.ok().entity(SharedData.getInstance().getSensorAsInt(SensorsData.EXTR_SPEED)) .build();
+		Message msg = new Message(MessageType.ERROR, "Severe error in getExtrFanParam");
+		Status status = Status.FORBIDDEN;
+
+		ConfigSql sql = new ConfigSql();
+		Config cfg;
+		try {
+			cfg = sql.loadConfig();
+			ExtrFanParam param = new ExtrFanParam(SharedData.getInstance().getSensorAsInt(SensorsData.EXTR_SPEED), cfg.isExtractorAuto() );
+
+			return Response.ok().entity(param).build();
+		} catch (ClassNotFoundException | SQLException e) {
+			msg = new Message(MessageType.ERROR, e.getMessage());
+			status = Status.INTERNAL_SERVER_ERROR;
+		}		
+
+		return Response.status(status).entity(msg).build();	
+	}
+	@Path("updateExtrFanAuto") // get extractor fan speed ( by percent )
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response extrFanUpdate(Config config) {
+		logger.debug("Getting extrFanUpdate:  " + config);
+
+		Message msg = new Message(MessageType.ERROR, "Severe error in extrFanUpdate");
+		Status status = Status.FORBIDDEN;
+
+		try {
+			ConfigSql sql = new ConfigSql();
+			Config cfgFromDb = sql.loadConfig();
+
+			cfgFromDb.setExtractorAuto(config.isExtractorAuto());
+
+			sql.updateConfig(cfgFromDb);
+			msg = new Message(MessageType.SUCCESS, "Auto updated");
+			return Response.ok().entity(msg).build();
+		} catch (ClassNotFoundException | SQLException e) {
+			msg = new Message(MessageType.ERROR, e.getMessage());
+			status = Status.INTERNAL_SERVER_ERROR;
+		}		
+
+		return Response.status(status).entity(msg).build();	
 	}
 
 	private static Map<Integer, Integer> createMap() {

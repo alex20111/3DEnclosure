@@ -1,3 +1,4 @@
+import { PrintingComponent } from './printing/printing.component';
 import { ConfigComponent } from './config/config.component';
 import { ExtractorComponent } from './extractor/extractor.component';
 import { LcdDashboardComponent } from './lcd-dashboard/lcd-dashboard.component';
@@ -7,7 +8,8 @@ import { Routes, RouterModule } from '@angular/router';
 const routes: Routes = [
   { path: '', component: LcdDashboardComponent },
   { path: 'extracFan', component: ExtractorComponent },
-  { path: 'config', component: ConfigComponent }
+  { path: 'config', component: ConfigComponent },
+  { path: 'print', component: PrintingComponent }
 
 ];
 

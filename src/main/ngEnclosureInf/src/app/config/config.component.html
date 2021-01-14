@@ -1,3 +1,11 @@
+<button class="float-right btn btn-light ml-1" style="position: sticky; top:0 " (click)="scrollButton('down')">
+    <fa-icon [icon]="faArrowDown"></fa-icon>
+</button>
+<button *ngIf="showUpButton" class="float-right btn btn-light" style="position: sticky; top:0 "
+    (click)="scrollButton('up')">
+    <fa-icon [icon]="faArrowUp"></fa-icon>
+</button>
+
 <h2 style="color: white;">Config</h2>
 
 <p *ngIf="error">
@@ -5,50 +13,92 @@
         {{error}}
     </ngb-alert>
 </p>
-
-<div class="container">
-    <div class="row">
-        <div class="col-6 " style="color: white;">
-            <form [formGroup]="configForm" (submit)="submitForm()">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="defaultCheck1" (click)="extrFanAuto()" formControlName="frm_extr_auto">
-                <label class="form-check-label" for="defaultCheck1">
-                    Extractor Fan On Auto
-                </label>
-            </div>
-            <div class="ml-2">      
-                      <label>VOC PPM max:</label>
-            <div class="input-group ">               
-                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_voc_ppm_max"/>
-                <div *ngIf="config.extractorAuto" class="input-group-append">
-                     <fa-icon class="input-group-text " (click)="openFormModal(1)" [icon]="faKeyboard" ></fa-icon>
-                </div>
-            </div>
-        </div>
-
-            <div class="form-group ml-2 ">
-                <label>Temp Max:</label>
-                <input type="text" class="form-control col-4 form-control-sm" formControlName="frm_temp_max" (click)="openFormModal(2)"/>
-            </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" value="" id="alarmCheck">
-                <label class="form-check-label" for="alarmCheck">
-                    Activate fire alarm
-                </label>
-            </div>
-            <div class="form-group">
-                <label>phone number for SMS</label>
-                <input type="text" class="form-control form-control-sm col-6" formControlName="frm_sms_number"  (click)="openFormModal(3)"/>
-            </div>
-            <div class="form-group">
-                <label>Arduio serial</label>
-                <input type="text" class="form-control form-control-sm col-6" formControlName="frm_arduino_serial"  (click)="openFormModal(3)"/>
-            </div>
-            <button class="btn btn-success">Save</button>
-            <button class="btn btn-success ml-1" (click)="cancelForm($event)">Cancel</button>
-        </form>
-        
-        </div>
+<p *ngIf="message">
+    <ngb-alert type="success" (closed)="message ='' ">
+        {{message}} <br/>
+        <button routerLink="/" class="btn btn-primary btm-sm">Dashboard</button>
+    </ngb-alert>
     
+</p>
+
+
+<div *ngIf="configLoading" class="spinner-border text-warning" role="status">
+    <span class="sr-only">Loading...</span>
+  </div>
+
+
+<div class="container" *ngIf="!configLoading" >
+    <div class="row">
+
+        <div class="col-6 " style="color: white;">
+            <form [formGroup]="configForm" (submit)="submitForm()" >
+               
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="defaultCheck1" 
+                        formControlName="frm_extr_auto">
+                    <label class="form-check-label" for="defaultCheck1">
+                        Extractor Fan On Auto
+                    </label>
+                </div>
+                <div class="ml-2">
+                    <label>VOC PPM max:</label>
+                    <div class="input-group ">
+                        <input type="text" class="form-control col-4 form-control-sm" [readOnly]="!configForm.value.frm_extr_auto"
+                            formControlName="frm_voc_ppm_max" />
+                        <div *ngIf="configForm.value.frm_extr_auto" class="input-group-append">
+                            <fa-icon class="input-group-text " (click)="openFormModal(1)" [icon]="faKeyboard"></fa-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ml-2 ">
+                    <label>Temp Max:</label>
+                    <div class="input-group ">
+
+                        <input type="text" class="form-control col-4 form-control-sm " formControlName="frm_temp_max" 
+                        [readOnly]="!configForm.value.frm_extr_auto"/>
+                        <div *ngIf="configForm.value.frm_extr_auto" class="input-group-append">
+                            <fa-icon class="input-group-text " (click)="openFormModal(2)" [icon]="faKeyboard"></fa-icon>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" value="" id="alarmCheck" formControlName="frm_fire_alarm">
+                    <label class="form-check-label" for="alarmCheck">
+                        Activate fire alarm
+                    </label>
+                </div>
+                <div class="ml-2 ">
+                    <label>Phone number for SMS:</label>
+                    <div class="input-group ">
+
+                        <input type="text" class="form-control form-control-sm col-6" formControlName="frm_sms_number"/>
+                        <div  class="input-group-append">
+                            <fa-icon class="input-group-text " (click)="openFormModal(3)" [icon]="faKeyboard"></fa-icon>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" value="" id="lightOn" formControlName="frm_light_on">
+                    <label class="form-check-label" for="lightOn">
+                        Light ON on start
+                    </label>
+                </div>
+
+               
+                <div class="form-group">
+                    <label>Arduino serial:</label>
+                    <select formControlName="frm_arduino_serial" class="form-control">
+                        <option value="/dev/ttyAMA0">/dev/ttyAMA0 </option>
+                        <option value="/dev/ttyUSB0">/dev/ttyUSB0 </option>
+                    </select>
+                </div>
+                <button class="btn btn-success">Save</button>
+                <button class="btn btn-success ml-1" (click)="cancelForm($event)">Cancel</button>
+            </form>
+
+        </div>
+
     </div>
 </div>

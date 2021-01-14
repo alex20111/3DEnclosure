@@ -77,7 +77,7 @@ public class ConfigSql {
 	public Config loadConfig() throws ClassNotFoundException, SQLException {
 
 		DBConnection con = null;
-		Config config = null;
+		Config config = new Config();
 
 		int cnt = 0;
 		try {

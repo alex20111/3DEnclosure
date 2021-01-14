@@ -1,3 +1,27 @@
+<!-- <nav class="navbar navbar-light bg-light">
+  <a class="navbar-brand" href="#">Navbar</a>
+
+  <span class="navbar-text">
+    Navbar text with an inline element
+  </span>
+  <div ngbDropdown class="d-inline-block float-right" placement="bottom-right">
+    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>
+      <fa-icon [icon]="faCog"></fa-icon>
+    </button>
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+      <button ngbDropdownItem>Print</button>
+      <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
+      <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
+      <button ngbDropdownItem routerLink="/config">Config</button>
+      <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
+    </div>
+  </div>
+</nav> -->
+
+
+
+
+
 <h2 style="color: white;"> Enclosure monitor v1.0
 
   <div ngbDropdown class="d-inline-block float-right" placement="bottom-right">
@@ -5,7 +29,7 @@
       <fa-icon [icon]="faCog"></fa-icon>
     </button>
     <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
-      <button ngbDropdownItem>Print</button>
+      <button ngbDropdownItem routerLink="/print">Print</button>
       <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
       <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
       <button ngbDropdownItem routerLink="/config">Config</button>
@@ -20,15 +44,15 @@
   </ngb-alert>
 </p>
 <p *ngIf="message">
-  <ngb-alert type="success" (closed)="message = ''">
-    {{message}}
+  <ngb-alert type="success" (closed)="message = ''" > 
+    <div [innerHTML]="message"></div>
   </ngb-alert>
 </p>
-<!-- <p *ngIf="message">
+<p *ngIf="printMessage">
   <ngb-alert type="info" [dismissible]="false">
-    Printing. time remaining: 2:45.33
+  <app-countdown [timerStartDate] = "printMessage"></app-countdown>
   </ngb-alert>
-</p> -->
+</p>
 <div class="container">
   <div class="row">
     <div class="col-5 ml-1" style="color: white;   border-style: solid;  border-color: white;">

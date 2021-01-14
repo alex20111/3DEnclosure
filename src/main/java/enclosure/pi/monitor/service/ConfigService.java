@@ -12,6 +12,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
 import enclosure.pi.monitor.db.sql.ConfigSql;
@@ -65,14 +66,19 @@ public class ConfigService {
 		Status status = Status.FORBIDDEN;
 		try {
 			
-		
-			Config cf = new Config();
+			
+			ConfigSql sql = new ConfigSql();
+			sql.updateConfig(configData);
+			
+			
+			msg = new Message(MessageType.SUCCESS, "Config Updated");
 
-
-			return Response.ok().entity(cf).build();
+			SharedData.getInstance().putSharedObject(Constants.CONFIG, sql.loadConfig());
+			
+			return Response.ok().entity(msg).build();
 
 		}catch(Exception e) {
-			logger.error("Error in getConfig" , e);
+			logger.error("Error in updateConfig" , e);
 			status = Status.BAD_REQUEST;
 			msg = new Message(MessageType.ERROR, e.getMessage());
 		}

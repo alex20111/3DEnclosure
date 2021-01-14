@@ -10,6 +10,8 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { ExtractorComponent } from './extractor/extractor.component';
 import { ConfigComponent } from './config/config.component';
 import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number-keypad-modal.component';
+import { PrintingComponent } from './printing/printing.component';
+import { CountdownComponent } from './_helper/countdown/countdown.component';
 
 @NgModule({
   declarations: [
@@ -17,7 +19,9 @@ import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number
     LcdDashboardComponent,
     ExtractorComponent,
     ConfigComponent,
-    NumberKeypadModalComponent
+    NumberKeypadModalComponent,
+    PrintingComponent,
+    CountdownComponent
   ],
   imports: [
     BrowserModule,

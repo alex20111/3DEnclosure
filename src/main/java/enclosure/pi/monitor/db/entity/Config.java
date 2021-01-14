@@ -85,6 +85,12 @@ public class Config {
 	public void setArduinoSerialPort(String arduinoSerialPort) {
 		this.arduinoSerialPort = arduinoSerialPort;
 	}
+	@Override
+	public String toString() {
+		return "Config [id=" + id + ", lightsOn=" + lightsOn + ", extractorAuto=" + extractorAuto + ", extrPPMLimit="
+				+ extrPPMLimit + ", encTempLimit=" + encTempLimit + ", fireAlarmAuto=" + fireAlarmAuto
+				+ ", smsPhoneNumber=" + smsPhoneNumber + ", arduinoSerialPort=" + arduinoSerialPort + "]";
+	}
 	
 	
 }

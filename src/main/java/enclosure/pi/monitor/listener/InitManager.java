@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ArduinoHandler;
+import enclosure.pi.monitor.arduino.Lights;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
 import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
@@ -39,6 +40,11 @@ public class InitManager implements ServletContextListener    {
 		}
 
 		try {
+			ConfigSql sql = new ConfigSql();
+			SharedData sd = SharedData.getInstance();
+			sql.createConfigTable();
+
+			Config cfg = sql.loadConfig();
 
 			if (prod) {
 				ArduinoHandler ah = ArduinoHandler.getInstance();
@@ -46,15 +52,27 @@ public class InitManager implements ServletContextListener    {
 				ah.openSerialConnection();
 
 				new Thread(new MonitorThread(2000)).start();
+
+				//wait until arduino ready
+				int cnt = 0;
+				while(!ah.isArduinoReady() && cnt < 20) {
+					cnt++;
+					Thread.sleep(1000);
+				}
+				if (cfg.isLightsOn()) {
+					logger.info("Auto turning lights");
+					Lights l = new Lights(LightAction.ON);
+					l.triggerLight();
+				}
 			}else {
-				SharedData.getInstance().setRunningInProd(false);
+				sd.setRunningInProd(false);
 				logger.info("!!!!!!!! in testing mode !!!!!!!!!!");
 			}
-			
-			
-			ConfigSql sql = new ConfigSql();
-			sql.createConfigTable();
-			
+
+
+			sd.putSharedObject(Constants.CONFIG, cfg);
+
+
 		}catch(Exception ex) {
 			logger.error("error in contextInitialized", ex);		
 		}

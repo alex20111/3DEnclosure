@@ -17,9 +17,9 @@ export class GeneralService {
 
   }
 
-  dashBoard(): Observable<DashBoard | Message>{
+  dashBoard(): Observable<DashBoard >{
 
-    return this.http.get<DashBoard | Message>('http://localhost:8080/web/general/dashboard');
+    return this.http.get<DashBoard>('http://localhost:8080/web/general/dashboard');
  
 
   }

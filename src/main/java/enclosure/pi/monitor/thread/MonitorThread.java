@@ -11,8 +11,10 @@ import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ArduinoAllSensorsData;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
+import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
+import enclosure.pi.monitor.db.entity.Config;
 
 
 //add data here to monitor automatically if function is enable.
@@ -32,14 +34,14 @@ public class MonitorThread implements Runnable{
 	@Override
 	public void run() {
 		
-		File dataFile = new File("/opt/jetty/dataCsv.txt");
-		BufferedWriter writer = null;
-		try {
-			writer = new BufferedWriter(new FileWriter(dataFile));
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+//		File dataFile = new File("/opt/jetty/dataCsv.txt");
+//		BufferedWriter writer = null;
+//		try {
+//			writer = new BufferedWriter(new FileWriter(dataFile));
+//		} catch (IOException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 
 		SharedData sd = SharedData.getInstance(); 
 		sd.putSensor(SensorsData.EXTR_SPEED, 0); //init value that we know that it ill be 0 at start.
@@ -51,10 +53,16 @@ public class MonitorThread implements Runnable{
 				ArduinoAllSensorsData data = new ArduinoAllSensorsData();
 				data.requestAllSensorInfo();
 				
-				String writeTofile = LocalDateTime.now().toString() + "," +sd.getSensorAsString(SensorsData.AIR_VOC) + "," + sd.getSensorAsString(SensorsData.AIR_CO2) + "\n";
-				writer.write(writeTofile);
+//				String writeTofile = LocalDateTime.now().toString() + "," +sd.getSensorAsString(SensorsData.AIR_VOC) + "," + sd.getSensorAsString(SensorsData.AIR_CO2) + "\n";
+//				writer.write(writeTofile);
+//				
+//				writer.flush();
 				
-				writer.flush();
+				Config cfg = (Config)sd.getSharedObject(Constants.CONFIG);
+				
+				if (cfg.isExtractorAuto()) {
+					
+				}
 				
 				Thread.sleep(delay);
 			} catch (Exception e) {

@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { faFan, faQuestion, faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
 import { Subscription, timer } from 'rxjs';
+import { Config } from '../services/config.service';
 import { FanService } from '../services/fan.service';
 
 @Component({
@@ -24,8 +25,9 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   disableIncBtn: boolean = false;
   disableDecBtn: boolean = false;
 
-  autoExtrFan: boolean = false;
+  autoExtrFanAuto: boolean = false;
   autoExtrFanText: string = 'OFF';
+  autoExtrFanLoading: boolean = false;
 
   error: string = '';
 
@@ -43,12 +45,16 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
 
     //get the fan speed to set the inital values
-    this.fanService.getFanSpeed().subscribe(speed => {
-      if (speed === -1) {
+    this.fanService.getExtrFanParam().subscribe(param => {
+
+      let fanSpd = 0;
+      if (param.fanSpeed === -1) {
         this.disableDecBtn = true;
-        speed = 0;
+        fanSpd = 0;
+      }else{
+        fanSpd = param.fanSpeed ;
       }
-      this.fanService.setFanSpeed(speed).subscribe(
+      this.fanService.setFanSpeed(fanSpd).subscribe(
         result => {
           this.extrSpeed = parseInt(result.message);
           this.extrSpeedLoading = false;
@@ -56,6 +62,15 @@ export class ExtractorComponent implements OnInit, OnDestroy {
         }, error => {
           this.showError(error);
         });
+
+        if (param.fanIsOnAuto){
+          this.autoExtrFanAuto = true;
+          this.autoExtrFanText = "ON";
+        }else{
+          this.autoExtrFanAuto = false;
+          this.autoExtrFanText = "OFF";
+        }
+
     },
       err => {
         this.showError(err);
@@ -63,7 +78,7 @@ export class ExtractorComponent implements OnInit, OnDestroy {
     );
 
     //get the fan RPM
-    this.fanRpmtimer = timer(2000, 5000).subscribe(val => {
+    this.fanRpmtimer = timer(500, 5000).subscribe(val => {
       this.fanService.getFanRmp().subscribe(rpm => {
         this.extrFanRpm = rpm;
       },
@@ -166,8 +181,30 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   }
 
   autoFanBtn() {
-    this.autoExtrFan = !this.autoExtrFan;
-    this.autoExtrFanText = 'ON';
+    this.autoExtrFanLoading = true;
+    this.autoExtrFanText = "wait";
+    // this.autoExtrFan = !this.autoExtrFan;  
+
+    let cfg = new Config();
+    cfg.extractorAuto = !this.autoExtrFanAuto;
+    this.fanService.updateExtrFanAuto(cfg).subscribe(result => {
+      this.autoExtrFanLoading = false;
+      if(cfg.extractorAuto){
+        this.autoExtrFanAuto = true;
+        this.autoExtrFanText = 'ON';
+      }else{
+        this.autoExtrFanAuto = false;
+        this.autoExtrFanText = 'OFF'
+      }
+    },
+    httpError => {
+      this.error = httpError.message + ' ' + httpError.error.error;
+      this.autoExtrFanLoading = false;
+      this.autoExtrFanAuto = false;
+      this.autoExtrFanText = "err";
+    });
+    
+
   }
 
   showError(httpError: any): void {
