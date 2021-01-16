@@ -1,5 +1,9 @@
+import { PrintService } from './../../services/print.service';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, interval } from 'rxjs';
+import { SessionService } from 'src/app/services/session.service';
+import { Constants } from 'src/app/_model/Constants';
+import { PrintMessage } from 'src/app/_model/PrintMessage';
 
 @Component({
   selector: 'app-countdown',
@@ -26,6 +30,7 @@ export class CountdownComponent implements OnInit,  OnDestroy {
   public hoursToDday: number = 0;
   public daysToDday: number = 0;
 
+  constructor(private printService: PrintService) { }
 
   private getTimeDifference () {
       this.timeDifference = this.timerStartDate.getTime() - new  Date().getTime();
@@ -45,13 +50,20 @@ private allocateTimeUnits (timeDifference: number) {
      this.subscription = interval(1000)
          .subscribe(x => { 
            this.getTimeDifference(); 
-           if (this.secondsToDday< 0){
-            this.subscription.unsubscribe();
+           if (this.minutesToDday === -1 && this.hoursToDday === -1 && this.daysToDday === -1 && this.secondsToDday < 0){
+             console.log("Finisheeeeeed");
+             let printFinish = new PrintMessage();
+             printFinish.finished = true;
+            this.printService.sendPrintMessage(printFinish);
+            this.subscription.unsubscribe();            
            }
+
+          //  console.log(this.daysToDday,this.hoursToDday , this.minutesToDday ,this.secondsToDday);
          });
   }
 
  ngOnDestroy() {
+   console.log("Countdown Destroyeddddd");
     this.subscription.unsubscribe();
  }
 

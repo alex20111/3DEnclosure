@@ -1,0 +1,10 @@
+<button class="btn btn-success mr-2" style="color: white;" (click)="autoFanBtn()"
+    [ngClass]="{ 'btn-success': autoExtrFanAuto , 'btn-danger': !autoExtrFanAuto}">
+    <span *ngIf="autoExtrFanLoading" class="spinner-border spinner-border-sm mr-1"></span>
+    Fan auto: {{autoExtrFanText}}
+</button>
+<button type="button" class="btn btn-primary mr-2" placement="bottom"
+    ngbPopover="It will control the fan based on air quality and heat inside the enclosure. See config page to set data."
+    popoverTitle="Auto fan">
+    <fa-icon class="mr-1 " [icon]="faQuestion"></fa-icon>
+</button>

@@ -7,4 +7,6 @@ public class Constants {
 	public static final String DB_PASS = "19348677";
 	
 	public static final String CONFIG = "configData";
+	
+	public static final String PRINT_STARTED = "printsStarted";
 }

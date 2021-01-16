@@ -36,6 +36,9 @@ private SharedData sd;
 			sd.putSensor(SensorsData.ENC_TEMP, split[1]);
 			sd.putSensor(SensorsData.AIR_CO2, split[2]);
 			sd.putSensor(SensorsData.AIR_VOC, split[3]);
+			sd.putSensor(SensorsData.MQ2, split[4]);
+			sd.putSensor(SensorsData.FLAME1, split[5]);
+			sd.putSensor(SensorsData.FLAME2, split[6]);
 
 		}
 		

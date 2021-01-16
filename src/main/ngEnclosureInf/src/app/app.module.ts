@@ -12,6 +12,8 @@ import { ConfigComponent } from './config/config.component';
 import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number-keypad-modal.component';
 import { PrintingComponent } from './printing/printing.component';
 import { CountdownComponent } from './_helper/countdown/countdown.component';
+import { ExtrAutoButtonComponent } from './extractor/extr-auto-button/extr-auto-button.component';
+
 
 @NgModule({
   declarations: [
@@ -21,7 +23,8 @@ import { CountdownComponent } from './_helper/countdown/countdown.component';
     ConfigComponent,
     NumberKeypadModalComponent,
     PrintingComponent,
-    CountdownComponent
+    CountdownComponent,
+    ExtrAutoButtonComponent
   ],
   imports: [
     BrowserModule,

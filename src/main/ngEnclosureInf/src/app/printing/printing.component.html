@@ -1,10 +1,29 @@
-<p>printing works!</p>
-How long the print is:
+<h3 style="color: white;"> Print</h3>
+<p *ngIf="error">
+  <ngb-alert type="danger" (closed)="error ='' ">
+    {{error}}
+  </ngb-alert>
+</p>
+<div class="container">
+  <div class="row">
+    <div class="col-10 ml-1" style="color: white;   border-style: solid;  border-color: white;">
+      <div class="mb-1">
+        <b> Print time: </b>
 
+        <ngb-timepicker [(ngModel)]="time" [seconds]="true"></ngb-timepicker>
+        
+      </div>
 
-Extractor fan on auto:
+      Extractor fan on auto:<br />
+      <app-extr-auto-button class="mb-1" [loadOnInit]="true"></app-extr-auto-button>
 
-<Button class="btn btn-success " (click)="backButton()">Start</Button>
-
-<button class="btn btn-primary mb-1">
-    Back </button>
+      <br />
+      <hr style="border-color: white" />
+      <div class="mt-2">
+        <Button class="btn btn-success mr-1" (click)="start()">Start</Button>
+        <button class="btn btn-danger mr-1" (click)="stop()">Stop</button>
+        <button class="btn btn-primary " routerLink="/"> Back </button>
+      </div>
+    </div>
+  </div>
+</div>

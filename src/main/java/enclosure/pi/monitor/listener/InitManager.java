@@ -35,23 +35,28 @@ public class InitManager implements ServletContextListener    {
 		boolean prod = true;
 		File localTest = new File("C:\\dev\\jetty\\devTest.txt");
 
+		SharedData sd = SharedData.getInstance();
 		if (localTest.exists()) {
 			prod = false;
+			sd.setRunningInProd(false);
+			logger.info("!!!!!!!! in testing mode !!!!!!!!!!");
 		}
+		
+		
 
 		try {
 			ConfigSql sql = new ConfigSql();
-			SharedData sd = SharedData.getInstance();
+			
+			
 			sql.createConfigTable();
 
 			Config cfg = sql.loadConfig();
+			sd.putSharedObject(Constants.CONFIG, cfg);
 
 			if (prod) {
 				ArduinoHandler ah = ArduinoHandler.getInstance();
 				//
 				ah.openSerialConnection();
-
-				new Thread(new MonitorThread(2000)).start();
 
 				//wait until arduino ready
 				int cnt = 0;
@@ -59,18 +64,12 @@ public class InitManager implements ServletContextListener    {
 					cnt++;
 					Thread.sleep(1000);
 				}
-				if (cfg.isLightsOn()) {
-					logger.info("Auto turning lights");
-					Lights l = new Lights(LightAction.ON);
-					l.triggerLight();
-				}
+				
+				new Thread(new MonitorThread(2000)).start();
+
 			}else {
-				sd.setRunningInProd(false);
-				logger.info("!!!!!!!! in testing mode !!!!!!!!!!");
+				
 			}
-
-
-			sd.putSharedObject(Constants.CONFIG, cfg);
 
 
 		}catch(Exception ex) {

@@ -1,4 +1,4 @@
-package enclosure.pi.monitor.service;
+	package enclosure.pi.monitor.service;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ExtractorFan;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
+import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
@@ -31,7 +32,7 @@ import enclosure.pi.monitor.service.model.Message.MessageType;
 public class FanControlService {
 	private static final Logger logger = LogManager.getLogger(FanControlService.class);
 
-	private static final Map<Integer, Integer> speedMap = createMap();
+	
 
 
 	@Path("extrSpeed") //set extractor fan speed
@@ -58,11 +59,11 @@ public class FanControlService {
 				fanSpeed = 0;
 			}
 
-			int speed = speedMap.get(fanSpeed);
-			logger.debug("new Speed: " + speed);
+//			int speed = ExtractorFan.speedMap.get(fanSpeed);
+			logger.debug("fanSpeed: " + fanSpeed);
 
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
-			exFan.setFanSpeed(speed, fanSpeed);		
+			exFan.setFanSpeed(fanSpeed);		
 
 			msg  = new Message(MessageType.SUCCESS, speedString);
 
@@ -144,6 +145,9 @@ public class FanControlService {
 			cfgFromDb.setExtractorAuto(config.isExtractorAuto());
 
 			sql.updateConfig(cfgFromDb);
+			
+			SharedData.getInstance().putSharedObject(Constants.CONFIG, cfgFromDb);
+			
 			msg = new Message(MessageType.SUCCESS, "Auto updated");
 			return Response.ok().entity(msg).build();
 		} catch (ClassNotFoundException | SQLException e) {
@@ -154,21 +158,6 @@ public class FanControlService {
 		return Response.status(status).entity(msg).build();	
 	}
 
-	private static Map<Integer, Integer> createMap() {
-		Map<Integer, Integer> result = new HashMap<>();
-		result.put(0, 255);
-		result.put(10, 229);
-		result.put(20, 204);
-		result.put(30, 178);
-		result.put(40, 153);
-		result.put(50, 127);
-		result.put(60, 102);
-		result.put(70, 76);
-		result.put(80, 51);
-		result.put(90, 25);
-		result.put(100, 0);
-		return Collections.unmodifiableMap(result);
 
-	}
 
 }

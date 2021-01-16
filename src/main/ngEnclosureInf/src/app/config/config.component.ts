@@ -148,11 +148,12 @@ export class ConfigComponent implements OnInit {
   }
 
   scrollButton(direction: string) {
+    console.log(this.position);
 
     if (direction === 'up' && this.position >= 20) {
       this.position = this.position - 20;
 
-    } else if (direction === 'down' && this.position < 100) {
+    } else if (direction === 'down' && this.position < 120) {
       this.position = this.position + 20;
     }
 

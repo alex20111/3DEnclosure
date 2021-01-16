@@ -1,3 +1,4 @@
+import { SessionService } from './../services/session.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { faFan, faQuestion, faTachometerAlt } from '@fortawesome/free-solid-svg-icons';
 import { Subscription, timer } from 'rxjs';
@@ -26,8 +27,8 @@ export class ExtractorComponent implements OnInit, OnDestroy {
   disableDecBtn: boolean = false;
 
   autoExtrFanAuto: boolean = false;
-  autoExtrFanText: string = 'OFF';
-  autoExtrFanLoading: boolean = false;
+  // autoExtrFanText: string = 'OFF';
+  // autoExtrFanLoading: boolean = false;
 
   error: string = '';
 
@@ -63,13 +64,8 @@ export class ExtractorComponent implements OnInit, OnDestroy {
           this.showError(error);
         });
 
-        if (param.fanIsOnAuto){
-          this.autoExtrFanAuto = true;
-          this.autoExtrFanText = "ON";
-        }else{
-          this.autoExtrFanAuto = false;
-          this.autoExtrFanText = "OFF";
-        }
+        this.autoExtrFanAuto = param.fanIsOnAuto;
+        this.fanService.sendFanAutoMode( this.autoExtrFanAuto); 
 
     },
       err => {
@@ -180,35 +176,36 @@ export class ExtractorComponent implements OnInit, OnDestroy {
     }
   }
 
-  autoFanBtn() {
-    this.autoExtrFanLoading = true;
-    this.autoExtrFanText = "wait";
-    // this.autoExtrFan = !this.autoExtrFan;  
+  // autoFanBtn() {
+  //   this.autoExtrFanLoading = true;
+  //   this.autoExtrFanText = "wait";
+  //   // this.autoExtrFan = !this.autoExtrFan;  
 
-    let cfg = new Config();
-    cfg.extractorAuto = !this.autoExtrFanAuto;
-    this.fanService.updateExtrFanAuto(cfg).subscribe(result => {
-      this.autoExtrFanLoading = false;
-      if(cfg.extractorAuto){
-        this.autoExtrFanAuto = true;
-        this.autoExtrFanText = 'ON';
-      }else{
-        this.autoExtrFanAuto = false;
-        this.autoExtrFanText = 'OFF'
-      }
-    },
-    httpError => {
-      this.error = httpError.message + ' ' + httpError.error.error;
-      this.autoExtrFanLoading = false;
-      this.autoExtrFanAuto = false;
-      this.autoExtrFanText = "err";
-    });
+  //   let cfg = new Config();
+  //   cfg.extractorAuto = !this.autoExtrFanAuto;
+  //   this.fanService.updateExtrFanAuto(cfg).subscribe(result => {
+  //     this.autoExtrFanLoading = false;
+  //     if(cfg.extractorAuto){
+  //       this.autoExtrFanAuto = true;
+  //       this.autoExtrFanText = 'ON';
+  //     }else{
+  //       this.autoExtrFanAuto = false;
+  //       this.autoExtrFanText = 'OFF'
+  //     }
+  //   },
+  //   httpError => {
+  //     this.error = httpError.message + ' ' + httpError.error.error;
+  //     this.autoExtrFanLoading = false;
+  //     this.autoExtrFanAuto = false;
+  //     this.autoExtrFanText = "err";
+  //   });
     
 
-  }
+  // }
 
   showError(httpError: any): void {
-    this.error = httpError.message + ' ' + httpError.error.error;
+    
+    
     console.log("httpError", httpError);
   }
 }

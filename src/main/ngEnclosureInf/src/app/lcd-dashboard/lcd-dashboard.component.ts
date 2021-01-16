@@ -1,9 +1,12 @@
+import { PrintService } from './../services/print.service';
 import { SessionService } from './../services/session.service';
 import { GeneralService, DashBoard } from './../services/general.service';
 import { Component, OnDestroy, OnInit, ɵConsole } from '@angular/core';
 import { Subscription, timer } from 'rxjs';
-import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
+import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog, faUnderline } from '@fortawesome/free-solid-svg-icons';
 import { LightService } from '../services/light.service';
+import { PrintMessage } from '../_model/PrintMessage';
+import { Constants } from '../_model/Constants';
 
 
 @Component({
@@ -22,9 +25,10 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   //alerts
   error: string = '';
   message: string = '';
-  printMessage!: Date;
+  printMessage: Date | undefined;
 
   dashBoardTimer: Subscription | undefined;
+  printMsg!: Subscription;
 
   //icons
   faThermometerHalf = faThermometerHalf;
@@ -34,20 +38,28 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faCog = faCog;
 
   constructor(
-    private generalService: GeneralService, private lightService: LightService, private session: SessionService) { }
+    private generalService: GeneralService, private lightService: LightService, private printService: PrintService) { }
 
 
   ngOnInit(): void {
 
-    const printInProgress = this.session.getSharedObject("print");
-    console.log("Print in prog: " , printInProgress);
-    if (printInProgress){
-      
-      this.printMessage = printInProgress as Date;
-      this.session.removeSharedObject("print");
-    }
-  
+    console.log("init");
 
+    this.printMsg = this.printService.getPrintMessage().subscribe(msg => {
+      if (msg != null) {
+        if (msg.date != null && msg.started) {
+          console.log("one: ", msg.date);
+          this.printMessage = msg.date;
+        } else if (msg.finished) {
+          this.message = "print finished";
+          this.printMessage = undefined;
+        }else if (msg.stoped) {
+          this.message = "";
+          this.printMessage = undefined;
+        }
+      }
+
+    });
 
     // console.log("windows size: " , window.innerWidth);
     // this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
@@ -100,11 +112,12 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       }
     );
 
-   
+
   }
 
   ngOnDestroy(): void {
     this.dashBoardTimer?.unsubscribe();
+    this.printMsg.unsubscribe();
   }
 
   showError(httpError: any): void {
