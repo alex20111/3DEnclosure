@@ -1,8 +1,6 @@
 import { PrintService } from './../../services/print.service';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, interval } from 'rxjs';
-import { SessionService } from 'src/app/services/session.service';
-import { Constants } from 'src/app/_model/Constants';
 import { PrintMessage } from 'src/app/_model/PrintMessage';
 
 @Component({
@@ -51,8 +49,7 @@ private allocateTimeUnits (timeDifference: number) {
          .subscribe(x => { 
            this.getTimeDifference(); 
            if (this.minutesToDday === -1 && this.hoursToDday === -1 && this.daysToDday === -1 && this.secondsToDday < 0){
-             console.log("Finisheeeeeed");
-             let printFinish = new PrintMessage();
+                   let printFinish = new PrintMessage();
              printFinish.finished = true;
             this.printService.sendPrintMessage(printFinish);
             this.subscription.unsubscribe();            
@@ -63,7 +60,6 @@ private allocateTimeUnits (timeDifference: number) {
   }
 
  ngOnDestroy() {
-   console.log("Countdown Destroyeddddd");
     this.subscription.unsubscribe();
  }
 

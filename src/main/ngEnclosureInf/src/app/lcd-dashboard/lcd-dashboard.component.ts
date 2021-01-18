@@ -1,3 +1,4 @@
+import { Message } from './../_model/Message';
 import { PrintService } from './../services/print.service';
 import { SessionService } from './../services/session.service';
 import { GeneralService, DashBoard } from './../services/general.service';
@@ -43,16 +44,19 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    console.log("init");
-
     this.printMsg = this.printService.getPrintMessage().subscribe(msg => {
       if (msg != null) {
         if (msg.date != null && msg.started) {
-          console.log("one: ", msg.date);
+          // console.log("one: ", msg.date);
           this.printMessage = msg.date;
-        } else if (msg.finished) {
-          this.message = "print finished";
+        } else if (msg.finished) {          
           this.printMessage = undefined;
+          this.printService.stopPrinting().subscribe(stopped => {
+            this.message = "print finished, Fan will stop in 5 min";
+          },
+          err => {
+            this.error = err.error.error;
+          })
         }else if (msg.stoped) {
           this.message = "";
           this.printMessage = undefined;
@@ -61,9 +65,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
     });
 
-    // console.log("windows size: " , window.innerWidth);
-    // this.message = `width: ${window.innerWidth}   -  height: ${window.innerHeight}`; 
-    this.dashBoardTimer = timer(500, 6000).subscribe(val => {
+    this.dashBoardTimer = timer(100, 6000).subscribe(val => {
       this.generalService.dashBoard().subscribe(dshboard => {
         this.error = '';
         // console.log("get: " , new Date());
@@ -92,7 +94,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     this.lightLoading = true;
     this.lightService.switchLightState(this.dashBoard.lightOn).subscribe(
       result => {
-        console.log('li:', result);
         if (result.message === 'true') {
           this.lightText = 'ON';
           this.dashBoard.lightOn = true;

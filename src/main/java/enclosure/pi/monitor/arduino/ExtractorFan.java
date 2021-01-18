@@ -84,7 +84,7 @@ public class ExtractorFan implements Command {
 			int speed = SharedData.getInstance().getSensorAsInt(SensorsData.EXTR_SPEED);
 
 			if (speed < 100) {
-				speed += speed + 10;
+				speed += 10;
 				setFanSpeed(speed);
 
 				if (speed == 100){
@@ -111,7 +111,7 @@ public class ExtractorFan implements Command {
 			int speed = SharedData.getInstance().getSensorAsInt(SensorsData.EXTR_SPEED);
 
 			if (speed > 0) {
-				speed += speed - 10;
+				speed -= 10;
 				setFanSpeed(speed);
 
 				if (speed == 0){

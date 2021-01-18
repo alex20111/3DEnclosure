@@ -20,18 +20,15 @@ export class PrintService {
     print.endDate = printFinished;
     print.started = true;
 
-
-    console.log("Sending: " , print);
-
     return  this.http.post<Message>('http://localhost:8080/web/print/start', print);
   }
 
   stopPrinting(): Observable<Message>{
-    const printing = {
-      started: false
-    }
+    let print = new PrintInfo();
+    print.endDate = new Date();
+    print.started = false;
 
-    return  this.http.post<Message>('http://localhost:8080/web/print/start', printing);
+    return  this.http.post<Message>('http://localhost:8080/web/print/stop', print);
   }
 
   sendPrintMessage(message: PrintMessage){

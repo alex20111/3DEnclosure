@@ -65,7 +65,7 @@ public class InitManager implements ServletContextListener    {
 					Thread.sleep(1000);
 				}
 				
-				new Thread(new MonitorThread(2000)).start();
+				new Thread(new MonitorThread(3000)).start();
 
 			}else {
 				

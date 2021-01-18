@@ -126,7 +126,6 @@ export class ExtractorComponent implements OnInit, OnDestroy {
       this.btn2Loading = true;
       this.fanService.setFanSpeed(extTemp).subscribe(
         result => {
-          console.log(" this.extrSpeed: ", result);
           this.extrSpeed = parseInt(result.message);
           this.extrSpeedLoading = false;
           this.btn2Loading = false;
@@ -175,33 +174,6 @@ export class ExtractorComponent implements OnInit, OnDestroy {
       this.disableIncBtn = false;
     }
   }
-
-  // autoFanBtn() {
-  //   this.autoExtrFanLoading = true;
-  //   this.autoExtrFanText = "wait";
-  //   // this.autoExtrFan = !this.autoExtrFan;  
-
-  //   let cfg = new Config();
-  //   cfg.extractorAuto = !this.autoExtrFanAuto;
-  //   this.fanService.updateExtrFanAuto(cfg).subscribe(result => {
-  //     this.autoExtrFanLoading = false;
-  //     if(cfg.extractorAuto){
-  //       this.autoExtrFanAuto = true;
-  //       this.autoExtrFanText = 'ON';
-  //     }else{
-  //       this.autoExtrFanAuto = false;
-  //       this.autoExtrFanText = 'OFF'
-  //     }
-  //   },
-  //   httpError => {
-  //     this.error = httpError.message + ' ' + httpError.error.error;
-  //     this.autoExtrFanLoading = false;
-  //     this.autoExtrFanAuto = false;
-  //     this.autoExtrFanText = "err";
-  //   });
-    
-
-  // }
 
   showError(httpError: any): void {
     

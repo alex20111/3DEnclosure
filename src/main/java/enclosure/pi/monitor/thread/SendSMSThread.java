@@ -19,7 +19,8 @@ public class SendSMSThread implements Runnable{
 	private String subject = "";
 
 	public SendSMSThread(String subject, String message) {
-
+		this.message = message;
+		this.subject = subject;
 	}
 
 	@Override
@@ -43,6 +44,8 @@ public class SendSMSThread implements Runnable{
 			} catch (MessagingException e) {
 				logger.error("Error sending SMS message" , e);
 			}
+		}else {
+			logger.info("No SMS number defined.. Not sendind a message");
 		}
 
 

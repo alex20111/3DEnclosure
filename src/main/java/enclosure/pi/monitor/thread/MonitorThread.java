@@ -149,7 +149,7 @@ public class MonitorThread implements Runnable{
 		}else if (printStarted != null && !printStarted.booleanValue()) {			
 			//stop the fan after 1 minute
 			if (stopFanTimer == null && autoStarted) {
-				stopFanTimer = LocalDateTime.now().plusMinutes(1);
+				stopFanTimer = LocalDateTime.now().plusMinutes(5);
 			}
 			else if (stopFanTimer != null && LocalDateTime.now().isAfter(stopFanTimer) && autoStarted) {
 				logger.debug("Printing stopped and stopping fan");
@@ -157,6 +157,7 @@ public class MonitorThread implements Runnable{
 				ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 				try {
 					fan.setFanSpeed(0);
+					stopFanTimer = null;
 				} catch (IllegalStateException | IOException e) {
 					logger.error(e);
 				};

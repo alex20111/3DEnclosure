@@ -43,8 +43,6 @@ export class PrintingComponent implements OnInit {
 
     let newDate = (this.time.hour * 60 * 60 * 1000) + (this.time.minute * 60 * 1000) + (this.time.second * 1000);
 
-    console.log("New date ", new Date(dateNow + newDate));
-
     const myDate = new Date(dateNow + newDate);
 
     let printInfo = new PrintMessage();
@@ -54,7 +52,7 @@ export class PrintingComponent implements OnInit {
     printInfo.minute = this.time.minute;
     printInfo.seconds = this.time.second;
 
-    console.log("my date: ", myDate);
+    // console.log("my date: ", myDate);
 
     this.printService.startPrinting(myDate).subscribe(result => {
       this.printService.sendPrintMessage(printInfo);
@@ -71,8 +69,15 @@ export class PrintingComponent implements OnInit {
   stop() {
     let printInfo = new PrintMessage();
     printInfo.stoped = true;
-    this.printService.sendPrintMessage(printInfo);
-    this.router.navigate(['/']);
+
+    this.printService.stopPrinting().subscribe(print => {
+      console.log("Stop printing message: " , print);
+      this.printService.sendPrintMessage(printInfo);
+      this.router.navigate(['/']);
+    }, err => {
+      this.error = err.message + ' ' + err.error.error;
+    });
+
   }
 
 

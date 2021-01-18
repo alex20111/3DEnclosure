@@ -53,7 +53,6 @@ export class ExtrAutoButtonComponent implements OnInit, OnDestroy {
     if (!this.loadOnInit) { //
 
       this.msg = this.fanService.getIsFanOnAuto().subscribe(exrFan => {
-        console.log("extractor: ", exrFan);
 
         if (exrFan != null) {
           if (exrFan.fanIsOnAuto ) {
@@ -66,21 +65,6 @@ export class ExtrAutoButtonComponent implements OnInit, OnDestroy {
           this.fanService.resetFanOnAuto();
         }
       });
-      // // this.msgSubs = this.session.getMessage().subscribe(fanAuto => {
-      // console.log("extractor: " , this.fanOnAuto);
-
-
-      //     if ( this.fanOnAuto === "true") {
-      //       this.autoExtrFanAuto = true;
-      //       this.autoExtrFanText = "ON";
-      //     } else {
-      //       this.autoExtrFanAuto = false;
-      //       this.autoExtrFanText = "OFF";
-      //     }
-
-      // //     this.msgSubs.unsubscribe();
-
-      // // });
     }
   }
 
