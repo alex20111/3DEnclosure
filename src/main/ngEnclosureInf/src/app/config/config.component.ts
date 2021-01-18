@@ -122,9 +122,8 @@ export class ConfigComponent implements OnInit {
     cfgPack.lightsOn = vals.frm_light_on
     cfgPack.smsPhoneNumber = vals.frm_sms_number
 
-    console.log("Sent: ", cfgPack);
     this.configService.updateConfig(cfgPack).subscribe(rtr => {
-      console.log("Got: ", rtr);
+
       this.message = rtr.message;
 
       this.position = 0;
