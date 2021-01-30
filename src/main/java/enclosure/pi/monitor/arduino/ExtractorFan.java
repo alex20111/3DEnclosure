@@ -19,7 +19,7 @@ public class ExtractorFan implements Command {
 	private ExtractorFanCmd cmd;
 	private ArduinoHandler ah;
 
-	private static final Map<Integer, Integer> speedMap = createMap();
+	private static final Map<Integer, String> speedMap = createMap();
 
 	public ExtractorFan(ExtractorFanCmd command) {
 		this.cmd = command;
@@ -48,7 +48,7 @@ public class ExtractorFan implements Command {
 	}
 
 	public void setFanSpeed( int speedPercent) throws IllegalStateException, IOException {
-		int speed = speedMap.get(speedPercent);
+		String speed = speedMap.get(speedPercent);
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(START_MARKER);
@@ -129,19 +129,19 @@ public class ExtractorFan implements Command {
 		return speedStopped;
 	}
 
-	private static Map<Integer, Integer> createMap() {
-		Map<Integer, Integer> result = new HashMap<>();
-		result.put(0, 255);
-		result.put(10, 229);
-		result.put(20, 204);
-		result.put(30, 178);
-		result.put(40, 153);
-		result.put(50, 127);
-		result.put(60, 102);
-		result.put(70, 76);
-		result.put(80, 51);
-		result.put(90, 25);
-		result.put(100, 0);
+	private static Map<Integer, String> createMap() {
+		Map<Integer, String> result = new HashMap<>();
+		result.put(0, "0");
+		result.put(10, "0.1");
+		result.put(20, "0.2");
+		result.put(30, "0.3");
+		result.put(40, "0.4");
+		result.put(50, "0.5");
+		result.put(60, "0.6");
+		result.put(70, "0.7");
+		result.put(80, "0.8");
+		result.put(90, "0.9");
+		result.put(100, "1.0");
 		return Collections.unmodifiableMap(result);
 
 	}

@@ -131,7 +131,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       this.message = success.message;
     },
       httpError => {
-        this.error = httpError.message + ' ' + httpError.error.error;
+        this.error = httpError.message + ' ' + httpError.error.st;
       });
   }
 }

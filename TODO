@@ -1,0 +1,34 @@
+
+The angular.json: "outputPath": "../webapp" to be the root OR "outputPath": "../webapp/ngApp/"  to be in Http://localhost:8080/ngApp
+the pom.xml <argument>--base-href=/</argument> to be root OR <argument>--base-href=/ngApp</argument> to be in Http://localhost:8080/ngApp
+
+https://stackoverflow.com/questions/38532210/how-to-integrate-angular-2-java-maven-web-application
+
+
+TODO:
+install new LEDs in the enclosure.
+when stopping a print , the underling thread is not cancelled and the print SMS is sent.
+//TODO add place to upload.. could be file drop on angular.. could be shared drive. 
+	//On the angular print screen a new upload button and a drag and drop.
+		//add checkbox to specify if want to print right away.
+	//on the angular screen , replace time by drop down of all the prints
+	//TODO handle stop command
+//TODO new angular screen where all the gcode are (gcode file handler)
+
+//TODO handle errors (Rteurn to start and end).
+//TODO push pre-heat sequence to angular as well as time.
+	//when you click on print, the banner will 1st display temp of nozzle and temp of bed heating up.
+	//after the time estimated will be displayed. 
+	//if any errors, it will be displayed there also..
+	
+
+
+Test:
+Test smoke alarm system.
+
+
+Done:
+new arduino code to handle multiple serial returns.. <ss> <sda>
+Update arduino code to control new fan
+Connect printer to raspberry pi. Create usb cable.
+Print new Inline fan and install.

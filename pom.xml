@@ -99,6 +99,20 @@
 			<version>1.6.2</version>
 		</dependency>
 
+		<dependency>
+			<groupId>javax.websocket</groupId>
+			<artifactId>javax.websocket-api</artifactId>
+			<version>1.1</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/com.jsoniter/jsoniter -->
+		<dependency>
+		    <groupId>com.jsoniter</groupId>
+		    <artifactId>jsoniter</artifactId>
+		    <version>0.9.23</version>
+		</dependency>
+		
 
 		<dependency>
 			<groupId>junit</groupId>

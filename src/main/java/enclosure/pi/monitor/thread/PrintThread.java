@@ -4,8 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-import enclosure.pi.monitor.service.model.PrintInfo;
-
 public class PrintThread implements Runnable {
 	private static final Logger logger = LogManager.getLogger(PrintThread.class);
 

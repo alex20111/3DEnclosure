@@ -17,6 +17,7 @@ import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
 import enclosure.pi.monitor.db.sql.ConfigSql;
+import enclosure.pi.monitor.printer.PrinterHandler;
 import enclosure.pi.monitor.thread.MonitorThread;
 
 
@@ -66,6 +67,9 @@ public class InitManager implements ServletContextListener    {
 				}
 				
 				new Thread(new MonitorThread(3000)).start();
+				
+				//starting printer listener
+				new PrinterHandler();
 
 			}else {
 				

@@ -3,6 +3,9 @@ package enclosure.pi.monitor.arduino;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 
@@ -10,6 +13,7 @@ import enclosure.pi.monitor.common.SharedData;
 
 public class ArduinoAllSensorsData implements Command{
 	
+	private static final Logger logger = LogManager.getLogger(ArduinoAllSensorsData.class);
 	
 private ArduinoHandler ah;
 private SharedData sd;

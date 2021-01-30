@@ -27,7 +27,10 @@ public class MonitorThread implements Runnable{
 	private int delay = 1000;
 	private boolean keepMonitoring = true;
 
+	//smoke variables
 	private int smokeSensorLimit = 500;
+	private int smokeCo2Limt = 30000;
+	private int smokePPMLimit = 10000;
 	private SmokeLevel smokeLevel = SmokeLevel.NO_SMOKE;
 	private LocalDateTime nextFireAlarmToBeSent;      //the 1st one is sent automatically.. the next one each 5 min..
 
@@ -89,8 +92,7 @@ public class MonitorThread implements Runnable{
 	}
 	private void processExtractorControl(SharedData sd, Config cfg) {
 		
-		Boolean printStarted = (Boolean)sd.getSharedObject(Constants.PRINT_STARTED);
-		
+		Boolean printStarted = (Boolean)sd.getSharedObject(Constants.PRINT_STARTED);		
 
 		if (printStarted != null && printStarted.booleanValue()) {
 			
@@ -109,20 +111,10 @@ public class MonitorThread implements Runnable{
 			boolean increaseFanOutput = false;
 	
 			int extPPmlimit = cfg.getExtrPPMLimit();
-			int currentPPmLimit = 0;
-			try {
-				currentPPmLimit = Integer.parseInt(sd.getSensorAsString(SensorsData.AIR_VOC));
-			}catch(NumberFormatException f ) {
-				logger.info("ENCLOUSRE currentPPmLimit is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.AIR_VOC) );
-			}
+			int currentPPmLimit = getVoc(sd);
+		
 			float tempLimit = (float)cfg.getEncTempLimit();
-			float currentTemp = 0.0f;
-			try {
-				currentTemp = Float.parseFloat(sd.getSensorAsString(SensorsData.ENC_TEMP));
-			}catch(NumberFormatException nfx) {
-				logger.info("ENCLOUSRE temp is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.ENC_TEMP) );
-			}
-	
+			float currentTemp = getCurrTemp(sd);	
 	
 			if (currentPPmLimit > extPPmlimit || currentTemp >  tempLimit) {
 				increaseFanOutput = true;
@@ -144,7 +136,7 @@ public class MonitorThread implements Runnable{
 				logger.debug("Resetting  fan speed because - 10 % ");
 				nextSpeedIncrease = null;
 				ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
-				boolean stopped = fan.decreaseSpeed();
+				 fan.decreaseSpeed();
 			}
 		}else if (printStarted != null && !printStarted.booleanValue()) {			
 			//stop the fan after 1 minute
@@ -166,42 +158,44 @@ public class MonitorThread implements Runnable{
 
 
 	}
-	private void processFireAlarm(SharedData sd) {
+	private void processFireAlarm(SharedData sd) throws IllegalStateException, IOException {
 
 		logger.debug("processFireAlarm");
 
 		//check sensors and if alarm is set, send it.. if fire..shut down ventilation... send alarm in 3 steps 1st one warning possible.. 30 sec after re-confirm.
-		int smokeSensor = 0;
-		try {
-			smokeSensor = Integer.parseInt(sd.getSensorAsString(SensorsData.MQ2));
+		int smokeSensor = getMq2Sensor(sd);
+		int co2 = getCurrCO2(sd);
+		int vocPPM = getVoc(sd);
 
-		}catch(NumberFormatException f) {
-			logger.error("processFireAlarm ,value error" , f);
-		}
 
-		if (smokeSensor > smokeSensorLimit) {						
+		if (  smokeSensor > smokeSensorLimit || 
+				co2 > smokeCo2Limt || 
+				vocPPM > smokePPMLimit ) {						
 			//send 1st step warning. 
 			if (smokeLevel == SmokeLevel.NO_SMOKE) {
 				smokeLevel = SmokeLevel.WARNING;
-				//then wait 30 seconds before escalating if there is still smoke.
-				//TODO send warning message with flame sensor data.. 
+				//then wait 45 seconds before escalating if there is still smoke.
 				logger.info("sent SMOKE warning alarm");
-				nextFireAlarmToBeSent =  LocalDateTime.now().plusSeconds(30);
+				nextFireAlarmToBeSent =  LocalDateTime.now().plusSeconds(45);
+				sendSMS("!!!!WARNING!!! ", "Smoke detected.\nCO2: " + co2 + "\nVOC: " + vocPPM + "\nMq2: " + smokeSensor);
 			}else if (smokeLevel == SmokeLevel.WARNING) {
 				//check if the 30 seconds is up.. if it's up, then send severe warning
 				LocalDateTime now = LocalDateTime.now();
 				if (now.isAfter(nextFireAlarmToBeSent)) {
-					//TODO send other alarm reminder.. --- SHUT down ventilation
 					logger.info("sent smoke ALARM!!!!!! m");
 					smokeLevel = SmokeLevel.ALARM;
 					nextFireAlarmToBeSent = LocalDateTime.now().plusMinutes(5);
+					sendSMS("!!!!ALARM!!! ", "You got SMOKE!!! .\nCO2: " + co2 + "\nVOC: " + vocPPM + "\nMq2: " + smokeSensor);
+					//stop fan
+					ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
+					fan.setFanSpeed(0);
 				}
 			}else if (smokeLevel == SmokeLevel.ALARM) {
 				LocalDateTime now = LocalDateTime.now();
 				if(now.isAfter(nextFireAlarmToBeSent)) {
 					nextFireAlarmToBeSent = LocalDateTime.now().plusMinutes(5);
 					logger.info("sent smoke ALARM!!!!!! reminder");
-					//TODO send other alarm reminder.. 
+					sendSMS("!!!!ALARM REMINDER!!! ", "You got SMOKE!!! Next remonder in 5 min .\nCO2: " + co2 + "\nVOC: " + vocPPM + "\nMq2: " + smokeSensor);
 				}
 			}
 
@@ -210,7 +204,53 @@ public class MonitorThread implements Runnable{
 			nextFireAlarmToBeSent = null;
 		}
 	}
+	
+	private int getVoc(SharedData sd) {
+		int currentPPmLimit  = -1;
+		try {
+			 currentPPmLimit = Integer.parseInt(sd.getSensorAsString(SensorsData.AIR_VOC));
+		}catch(NumberFormatException f ) {
+			logger.info("ENCLOUSRE currentPPmLimit is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.AIR_VOC) );
+		}
+		return currentPPmLimit;
+	}
 
+	private float getCurrTemp(SharedData sd) {
+		float currTmp = 0.0f;
+		try {
+			currTmp = Float.parseFloat(sd.getSensorAsString(SensorsData.ENC_TEMP));
+		}catch(NumberFormatException nfx) {
+			logger.info("ENCLOUSRE temp is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.ENC_TEMP) );
+		}
+		
+		return currTmp;
+	}
+	
+	private int getCurrCO2(SharedData sd){
+		int currCo2 = -1;
+		try {
+			currCo2 = Integer.parseInt(sd.getSensorAsString(SensorsData.AIR_CO2));
+		}catch(NumberFormatException f ) {
+			logger.info("ENCLOUSRE CO2 is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.AIR_CO2) );
+		}
+		return currCo2;
+	}
+	private int getMq2Sensor(SharedData sd) {
+		int mq2 = -1;
+		try {
+			mq2 = Integer.parseInt(sd.getSensorAsString(SensorsData.MQ2));
+		}catch(NumberFormatException f ) {
+			logger.info("MQ2 Sensor info is not found or cannot be converted. Value: " + sd.getSensorAsString(SensorsData.MQ2) );
+		}
+		return mq2;
+	}
+	private void sendSMS(String subject, String message) {
+		SendSMSThread sms = new SendSMSThread(subject, message);
+
+		ThreadManager.getInstance().sendSmsMessage(sms);
+	}
+	
+	
 	public void stopMonitoring() {
 		this.keepMonitoring = false;
 	}

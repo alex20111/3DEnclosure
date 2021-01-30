@@ -1,6 +1,7 @@
 package enclosure.pi.monitor.arduino;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +37,12 @@ public class ArduinoHandler {
 	private ArduinoSerialEvent ardSerialEvent;
 
 	private ArduinoHandler() {		
+		
+		String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.4.2:1.0-port0";
+		
 		serial = SerialFactory.createInstance();
 		config = new SerialConfig();
-		config.device("/dev/ttyUSB0")
+		config.device(usbPort)
 		.baud(Baud._19200)
 		.dataBits(DataBits._8)
 		.parity(Parity.NONE)
@@ -104,23 +108,38 @@ public class ArduinoHandler {
 			public void dataReceived(SerialDataEvent event) {
 				try {
 					String eventString =  event.getAsciiString();
-//					logger.info("eventString: " + eventString);
+					logger.info("eventString: " + eventString);
 
 					if ("Ready".equalsIgnoreCase(eventString.trim())) {
 						arduinoReady = true;
 						logger.info("!! Arduino READY !!");
 					} else { 
-						ardSerialEvent.translateReceivedEvent(eventString);
-
-						if (ardSerialEvent.isCommandComplete()) {
-							if (ardSerialEvent.isCommand(Command.GET_RPM_CMD)) {
-								rpmQueue.offer( Integer.parseInt( ardSerialEvent.getOutput() ), 4000, TimeUnit.MILLISECONDS);
-							}else if (ardSerialEvent.isCommand(Command.TEMPERATURE_CMD)) {
-								encTemp.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS) ;
-							}else if(ardSerialEvent.isCommand(Command.ALL_SESNORS))  {
-								allSensorQueue.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS);
+						
+						ardSerialEvent.processEvent(eventString);
+						
+						List<CleanedEvent> ev = ardSerialEvent.getOutputs();
+						
+						logger.debug("Returned event -------------------> " + ev);
+						
+						for(CleanedEvent cl : ev) {
+							if (cl.getCommand().equalsIgnoreCase(Command.GET_RPM_CMD)) {
+								rpmQueue.offer( Integer.parseInt( cl.getData() ), 4000, TimeUnit.MILLISECONDS);
+							}else if (cl.getCommand().equalsIgnoreCase(Command.TEMPERATURE_CMD)) {
+								encTemp.offer(cl.getData(), 4000, TimeUnit.MILLISECONDS) ;
+							}else if(cl.getCommand().equalsIgnoreCase(Command.ALL_SESNORS))  {
+								allSensorQueue.offer(cl.getData(), 4000, TimeUnit.MILLISECONDS);
 							}
-						}				
+						}
+
+//						if (ardSerialEvent.isCommandComplete()) {
+//							if (ardSerialEvent.isCommand(Command.GET_RPM_CMD)) {
+//								rpmQueue.offer( Integer.parseInt( ardSerialEvent.getOutput() ), 4000, TimeUnit.MILLISECONDS);
+//							}else if (ardSerialEvent.isCommand(Command.TEMPERATURE_CMD)) {
+//								encTemp.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS) ;
+//							}else if(ardSerialEvent.isCommand(Command.ALL_SESNORS))  {
+//								allSensorQueue.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS);
+//							}
+//						}				
 					}
 
 				} catch (Exception e) {
