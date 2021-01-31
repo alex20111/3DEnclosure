@@ -8,5 +8,16 @@ public class Constants {
 	
 	public static final String CONFIG = "configData";
 	
-	public static final String PRINT_STARTED = "printsStarted";
+//	public static final String PRINT_STARTED = "printsStarted";
+	
+	
+	
+	//files directory
+	public static  String GCODE_DIR_DEV = "c:\\temp\\";
+	public static  String GCODE_DIR_PROD = "/opt/jetty/gcode";
+	
+	public static  String GCODE_DIR = "";
+	
+	//
+	
 }

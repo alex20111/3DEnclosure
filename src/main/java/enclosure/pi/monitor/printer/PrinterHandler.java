@@ -21,11 +21,14 @@ import com.pi4j.io.serial.SerialDataEventListener;
 import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
 
+import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.websocket.WebSocketClient;
 
 public class PrinterHandler {
 
 	private static final Logger logger = LogManager.getLogger(PrinterHandler.class);
+	
+	private static PrinterHandler printerHandler;
 
 	private Serial serial;
 	private SerialConfig config;
@@ -39,23 +42,34 @@ public class PrinterHandler {
 
 	private boolean isConnected = false;
 	private boolean sendingGcode = false;
+	private boolean printing = false;
 
 	private static Object monitor = new Object();
-	//TODO add place to upload.. could be file drop on angular.. could be shared drive
 	//TODO handle stop command
 	//TODO handle errors (Rteurn to start and end).
 	//TODO push pre-heat sequence to angular as well as time.
 	
-	
-	public PrinterHandler() { 
+	public static PrinterHandler getInstance() {
+		if (printerHandler == null) {
+			synchronized (PrinterHandler.class) {
+				if(printerHandler == null) {
+					logger.info( "printerHandler initialized");
+					printerHandler = new PrinterHandler();
+				}
+			}
+		}
+		return printerHandler;
+	}	
+
+
+	private PrinterHandler() { 
 		logger.debug("Starting: PrinterHandler");
 
-//		filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+		//		filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
 
 		connect();
-	}
-
-	//TODO add loop that check if printer is connected and try to connect if not.
+	}	
+	
 	private void connect() {
 		new Thread(new Runnable() {
 
@@ -123,49 +137,67 @@ public class PrinterHandler {
 		}).start();
 	}
 
-	public void sendGcodeFile(String file) throws FileNotFoundException {
-		Path gcode = new File("/opt/jetty/gcode/" + file).toPath();
+	public void sendGcodeFileToPrinter(String file) throws FileNotFoundException {
 
-		if (Files.exists(gcode)) {
-			RandomAccessFile gcodeFile = new RandomAccessFile(gcode.toFile().getAbsoluteFile(), "r");
+		if (isConnected) {
+			Path gcode = new File(Constants.GCODE_DIR+ file).toPath();
 
-			try {
-				sendingGcode = true;
-				String str;
-				while ((str = gcodeFile.readLine()) != null) {
-					if (!str.startsWith(";") && str.length() > 0) {
-						System.out.println("Sending: " + str);
-						//add
+			if (Files.exists(gcode)) {
+				printing = true;
+				RandomAccessFile gcodeFile = new RandomAccessFile(gcode.toFile().getAbsoluteFile(), "r");
 
-						serial.write(str + "\r\n");
-						synchronized(monitor) {							
-							monitor.wait();							
-						}
+				try {
+					sendingGcode = true;
+					String str;
+					while ((str = gcodeFile.readLine()) != null && sendingGcode) {
+						if (!str.startsWith(";") && str.length() > 0) {
+							System.out.println("Sending: " + str);
+							//add
 
-					}else if (str.contains("TIME")) {
-						try {
-							double timeInSec = Double.parseDouble(str.substring(str.indexOf(":") + 1, str.length()));
-							int sec = (int)Math.round(timeInSec);
-							System.out.println("estimated time");
-							int p1 = sec % 60;
-							int p2 = sec / 60;
-							int p3 = p2 % 60;
-							p2 = p2 / 60;
-							//				        output.append("Time remaining: " +  p2 + ":" + p3 + ":" + p1);
-							System.out.print( p2 + ":" + p3 + ":" + p1);
-							System.out.print("\n");
-						}catch(NumberFormatException nfx) {
+							serial.write(str + "\r\n");
+							synchronized(monitor) {							
+								monitor.wait();							
+							}
 
+						}else if (str.contains("TIME")) {
+							try {
+								double timeInSec = Double.parseDouble(str.substring(str.indexOf(":") + 1, str.length()));
+								int sec = (int)Math.round(timeInSec);
+								System.out.println("estimated time");
+								int p1 = sec % 60;
+								int p2 = sec / 60;
+								int p3 = p2 % 60;
+								p2 = p2 / 60;
+								//				        output.append("Time remaining: " +  p2 + ":" + p3 + ":" + p1);
+								System.out.print( p2 + ":" + p3 + ":" + p1);
+								System.out.print("\n");
+							}catch(NumberFormatException nfx) {
+
+							}
 						}
 					}
+					printing =  false;
+					sendingGcode = false;
+					gcodeFile.close();
+					//DONE!! 
+					WebSocketClient.getInstance().sendMessage("print done");
+				}catch(IOException | InterruptedException e) {
+					printing =  false;
+					sendingGcode = false;
+					e.printStackTrace();
 				}
-				gcodeFile.close();
-				//DONE!! 
-				WebSocketClient.getInstance().sendMessage("print done");
-			}catch(IOException | InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
+	}
+
+
+	public boolean isConnected() {
+		return isConnected;
+	}
+
+
+	public boolean isPrinting() {
+		return printing;
 	}
 
 
@@ -179,15 +211,15 @@ public class PrinterHandler {
 
 				if (sendingGcode) {
 					if (eventString.contains("ok")){
-//						okRecived = true;
-//						System.out.println("Ok recieved: " + ok);
-//						output.append("\nOk recieved: " + ok);
+						//						okRecived = true;
+						//						System.out.println("Ok recieved: " + ok);
+						//						output.append("\nOk recieved: " + ok);
 						synchronized(monitor) {
 							monitor.notifyAll();
 						}
 					}else {
-//						System.out.println("!Other than ok!!: " + ok);
-//						output.append("\n!!Other than ok!!: " + ok);
+						//						System.out.println("!Other than ok!!: " + ok);
+						//						output.append("\n!!Other than ok!!: " + ok);
 					}
 				}
 

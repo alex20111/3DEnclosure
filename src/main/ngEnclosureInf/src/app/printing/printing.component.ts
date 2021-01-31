@@ -1,3 +1,4 @@
+import { FileService, GcodeFileList } from './../services/file.service';
 import { PrintService } from './../services/print.service';
 import { SessionService } from './../services/session.service';
 import { Component, OnInit } from '@angular/core';
@@ -5,6 +6,8 @@ import { Router } from '@angular/router';
 import { NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { PrintMessage } from '../_model/PrintMessage';
 import { Constants } from '../_model/Constants';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
+
 
 @Component({
   selector: 'app-printing',
@@ -16,17 +19,30 @@ export class PrintingComponent implements OnInit {
   error: string = "";
   time: NgbTimeStruct = { hour: 0, minute: 0, second: 0 };
 
-  constructor(private session: SessionService, private router: Router, private printService: PrintService) { }
+  fileList: GcodeFileList[] = [];
+
+  faUpload = faUpload;
+
+  constructor(private session: SessionService, private router: Router, private printService: PrintService, private fileService: FileService) { }
 
   ngOnInit(): void {
 
-    let printObj = this.session.getSharedObject(Constants.PRINTING) as PrintMessage;
+    this.fileService.fileList().subscribe(files => {
+      console.log("FIle list: " , files);
 
-    if (printObj != null) {
-      this.time.hour = printObj.hour;
-      this.time.minute = printObj.minute;
-      this.time.second = printObj.seconds;
-    }
+      this.fileList = files;
+    },
+    err => {
+      
+    });
+
+    // let printObj = this.session.getSharedObject(Constants.PRINTING) as PrintMessage;
+
+    // if (printObj != null) {
+    //   this.time.hour = printObj.hour;
+    //   this.time.minute = printObj.minute;
+    //   this.time.second = printObj.seconds;
+    // }
 
   }
 

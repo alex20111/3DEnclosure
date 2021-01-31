@@ -1,3 +1,4 @@
+import { GcodeFileUploadComponent } from './gcode-file-upload/gcode-file-upload.component';
 import { PrintingComponent } from './printing/printing.component';
 import { ConfigComponent } from './config/config.component';
 import { ExtractorComponent } from './extractor/extractor.component';
@@ -9,7 +10,8 @@ const routes: Routes = [
   { path: '', component: LcdDashboardComponent },
   { path: 'extracFan', component: ExtractorComponent },
   { path: 'config', component: ConfigComponent },
-  { path: 'print', component: PrintingComponent }
+  { path: 'print', component: PrintingComponent },
+  { path: 'fileUpload', component: GcodeFileUploadComponent }
 
 ];
 

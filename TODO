@@ -6,21 +6,32 @@ https://stackoverflow.com/questions/38532210/how-to-integrate-angular-2-java-mav
 
 
 TODO:
-install new LEDs in the enclosure.
-when stopping a print , the underling thread is not cancelled and the print SMS is sent.
-//TODO add place to upload.. could be file drop on angular.. could be shared drive. 
-	//On the angular print screen a new upload button and a drag and drop.
-		//add checkbox to specify if want to print right away.
-	//on the angular screen , replace time by drop down of all the prints
-	//TODO handle stop command
-//TODO new angular screen where all the gcode are (gcode file handler)
 
-//TODO handle errors (Rteurn to start and end).
-//TODO push pre-heat sequence to angular as well as time.
-	//when you click on print, the banner will 1st display temp of nozzle and temp of bed heating up.
+//TODO File Upload screen - new screen
+	//On the angular print screen a new upload button that will take you to the file upload screen.
+	//add checkbox to specify if want to print right away.
+		//the checkbox will only be aivailaible if the printer is connected.
+	//button to submit upload.
+--> java new file upload service.	
+	
+//TODO new angular screen where all the gcode are (gcode file handler)  - new Screen ( to del)  -- could be done on the file upload screen
+
+//TODO print screen
+	//on the angular print screen , replace time by drop down of all the prints. Print service will return a list of gcode files in a string array
+	//handle stop command
+	//add new component that verify if printer is active .. through websocket!!!!!!!!??
+ 
+	
+//TODO main screen DASH board 		
+	//push pre-heat sequence to angular as well as time.
+	//when you click on print from the print screen, the dashboard banner will 1st display temp of nozzle and temp of bed heating up.
 	//after the time estimated will be displayed. 
 	//if any errors, it will be displayed there also..
-	
+--> java web socket that will push that information.
+
+printer handle errors (Rteurn to start and end).
+install new LEDs in the enclosure.
+when stopping a print , the underling thread is not cancelled and the print SMS is sent.
 
 
 Test:

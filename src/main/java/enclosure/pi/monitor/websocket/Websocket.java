@@ -37,11 +37,16 @@ public class Websocket {
 	public void onMessage(String message, Session session) {
 		logger.debug("onMessage:: From=" + session.getId() + " Message=" + message);
 
-//		try {
-//			WebSocketHandler.getInstance().processMessage(session, message);
-//		}catch(IOException e) {
-//			logger.error("on message error: " , e);
-//		}
+		if(handler == null) {
+			handler = new WebSocketHandler();
+		}
+		
+		
+		try {
+			handler.processMessage(message, session);
+		}catch(IOException e) {
+			logger.error("on message error: " , e);
+		}
 	
 	}
 	

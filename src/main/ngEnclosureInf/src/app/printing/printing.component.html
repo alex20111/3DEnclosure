@@ -8,10 +8,25 @@
   <div class="row">
     <div class="col-10 ml-1" style="color: white;   border-style: solid;  border-color: white;">
       <div class="mb-1">
-        <b> Print time: </b>
+        <b> Select print: </b>
 
-        <ngb-timepicker [(ngModel)]="time" [seconds]="true"></ngb-timepicker>
-        
+
+
+        <div class="input-group ">
+          <select class="form-control">
+            <option *ngFor="let file of fileList" [ngValue]="file.fileName">
+              {{ file.fileName }}
+            </option>
+          </select>
+
+          <div class="input-group-append">
+
+            <fa-icon class="input-group-text" [icon]="faUpload" id="basic-addon2" routerLink="/fileUpload"></fa-icon>
+          </div>
+        </div>
+
+        <!-- <ngb-timepicker [(ngModel)]="time" [seconds]="true"></ngb-timepicker> -->
+
       </div>
 
       Extractor fan on auto:<br />

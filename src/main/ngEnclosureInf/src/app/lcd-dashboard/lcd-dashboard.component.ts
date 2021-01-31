@@ -1,3 +1,4 @@
+import { PiWebSocketService } from './../services/pi-web-socket.service';
 import { Message } from './../_model/Message';
 import { PrintService } from './../services/print.service';
 import { SessionService } from './../services/session.service';
@@ -39,31 +40,32 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faCog = faCog;
 
   constructor(
-    private generalService: GeneralService, private lightService: LightService, private printService: PrintService) { }
+    private generalService: GeneralService, private lightService: LightService, private printService: PrintService,
+      private wsSocket: PiWebSocketService) { }
 
 
   ngOnInit(): void {
 
-    this.printMsg = this.printService.getPrintMessage().subscribe(msg => {
-      if (msg != null) {
-        if (msg.date != null && msg.started) {
-          // console.log("one: ", msg.date);
-          this.printMessage = msg.date;
-        } else if (msg.finished) {          
-          this.printMessage = undefined;
-          this.printService.stopPrinting().subscribe(stopped => {
-            this.message = "print finished, Fan will stop in 5 min";
-          },
-          err => {
-            this.error = err.error.error;
-          })
-        }else if (msg.stoped) {
-          this.message = "";
-          this.printMessage = undefined;
-        }
-      }
+    // this.printMsg = this.printService.getPrintMessage().subscribe(msg => {
+    //   if (msg != null) {
+    //     if (msg.date != null && msg.started) {
+    //       // console.log("one: ", msg.date);
+    //       this.printMessage = msg.date;
+    //     } else if (msg.finished) {          
+    //       this.printMessage = undefined;
+    //       this.printService.stopPrinting().subscribe(stopped => {
+    //         this.message = "print finished, Fan will stop in 5 min";
+    //       },
+    //       err => {
+    //         this.error = err.error.error;
+    //       })
+    //     }else if (msg.stoped) {
+    //       this.message = "";
+    //       this.printMessage = undefined;
+    //     }
+    //   }
 
-    });
+    // });
 
     this.dashBoardTimer = timer(100, 6000).subscribe(val => {
       this.generalService.dashBoard().subscribe(dshboard => {
@@ -81,6 +83,13 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           this.showError(err);
         });
     });
+    this.wsSocket.connect().subscribe(wsReturn => {
+      console.log("WebSocket result" , wsReturn);
+    },
+    err => {
+      console.log("Web Socket error!!!" , err);
+    });
+
   }
 
   light() {
@@ -118,7 +127,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.dashBoardTimer?.unsubscribe();
-    this.printMsg.unsubscribe();
+    // this.printMsg.unsubscribe();
+    this.wsSocket.closeSocket();
   }
 
   showError(httpError: any): void {

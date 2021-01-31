@@ -36,12 +36,12 @@ public class PrintingService {
 	public Response startPrinting(PrintInfo printingData) {
 
 		logger.debug("Start printing. info: " + printingData + "\nReal time: " + printingData.getEndDateConv());
-		SharedData sd = SharedData.getInstance();
-
-		sd.putSharedObject(Constants.PRINT_STARTED, printingData.isStarted());
-
-		ThreadManager.getInstance().startPrint(printingData.getEndDateConv());		
-
+//		SharedData sd = SharedData.getInstance();
+//
+//		sd.putSharedObject(Constants.PRINT_STARTED, printingData.isStarted());
+//
+//		ThreadManager.getInstance().startPrint(printingData.getEndDateConv());		
+//
 
 		Message msg = new Message(MessageType.SUCCESS,"Printing started");
 
@@ -56,11 +56,11 @@ public class PrintingService {
 		logger.debug("stop printing. " + printingData);
 		Message msg = null;
 		try {
-			SharedData sd = SharedData.getInstance();
-
-			sd.putSharedObject(Constants.PRINT_STARTED, printingData.isStarted());
-
-			ThreadManager.getInstance().stopPrint();
+//			SharedData sd = SharedData.getInstance();
+//
+//			sd.putSharedObject(Constants.PRINT_STARTED, printingData.isStarted());
+//
+//			ThreadManager.getInstance().stopPrint();
 			
 			msg = new Message(MessageType.SUCCESS, "Print stopped, Stopping fan function in 5 min");
 		}catch (Exception e) {

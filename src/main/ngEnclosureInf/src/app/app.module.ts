@@ -13,6 +13,9 @@ import { NumberKeypadModalComponent } from './_helper/number-keypad-modal/number
 import { PrintingComponent } from './printing/printing.component';
 import { CountdownComponent } from './_helper/countdown/countdown.component';
 import { ExtrAutoButtonComponent } from './extractor/extr-auto-button/extr-auto-button.component';
+import { GcodeFileUploadComponent } from './gcode-file-upload/gcode-file-upload.component';
+import { DndDirective } from './directive/dnd.directive';
+import { ProgressComponent } from './_helper/progress/progress.component';
 
 
 @NgModule({
@@ -24,7 +27,10 @@ import { ExtrAutoButtonComponent } from './extractor/extr-auto-button/extr-auto-
     NumberKeypadModalComponent,
     PrintingComponent,
     CountdownComponent,
-    ExtrAutoButtonComponent
+    ExtrAutoButtonComponent,
+    GcodeFileUploadComponent,
+    DndDirective,
+    ProgressComponent
   ],
   imports: [
     BrowserModule,

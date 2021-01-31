@@ -10,10 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.arduino.ArduinoHandler;
-import enclosure.pi.monitor.arduino.Lights;
-import enclosure.pi.monitor.arduino.Lights.LightAction;
 import enclosure.pi.monitor.common.Constants;
-import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
 import enclosure.pi.monitor.db.sql.ConfigSql;
@@ -55,6 +52,10 @@ public class InitManager implements ServletContextListener    {
 			sd.putSharedObject(Constants.CONFIG, cfg);
 
 			if (prod) {
+				//directory
+				Constants.GCODE_DIR = Constants.GCODE_DIR_PROD;
+				
+				
 				ArduinoHandler ah = ArduinoHandler.getInstance();
 				//
 				ah.openSerialConnection();
@@ -69,10 +70,10 @@ public class InitManager implements ServletContextListener    {
 				new Thread(new MonitorThread(3000)).start();
 				
 				//starting printer listener
-				new PrinterHandler();
+				 PrinterHandler.getInstance();
 
 			}else {
-				
+				Constants.GCODE_DIR = Constants.GCODE_DIR_DEV;
 			}
 
 

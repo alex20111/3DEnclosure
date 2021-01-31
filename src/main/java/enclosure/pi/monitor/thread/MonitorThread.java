@@ -16,6 +16,7 @@ import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
+import enclosure.pi.monitor.printer.PrinterHandler;
 
 
 //add data here to monitor automatically if function is enable.
@@ -92,9 +93,9 @@ public class MonitorThread implements Runnable{
 	}
 	private void processExtractorControl(SharedData sd, Config cfg) {
 		
-		Boolean printStarted = (Boolean)sd.getSharedObject(Constants.PRINT_STARTED);		
+		boolean printStarted =  PrinterHandler.getInstance().isPrinting();	
 
-		if (printStarted != null && printStarted.booleanValue()) {
+		if (printStarted) {
 			
 			if (!autoStarted) {
 				logger.debug("Auto start fan");
@@ -138,7 +139,7 @@ public class MonitorThread implements Runnable{
 				ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 				 fan.decreaseSpeed();
 			}
-		}else if (printStarted != null && !printStarted.booleanValue()) {			
+		}else if (!printStarted) {			
 			//stop the fan after 1 minute
 			if (stopFanTimer == null && autoStarted) {
 				stopFanTimer = LocalDateTime.now().plusMinutes(5);
