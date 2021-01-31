@@ -1,5 +1,6 @@
+import { Message } from './../_model/Message';
 import { FileService, GcodeFileList } from './../services/file.service';
-import { PrintService } from './../services/print.service';
+import { PrintService, PrintServiceData } from './../services/print.service';
 import { SessionService } from './../services/session.service';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
@@ -7,6 +8,7 @@ import { NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { PrintMessage } from '../_model/PrintMessage';
 import { Constants } from '../_model/Constants';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
 
 @Component({
@@ -16,69 +18,64 @@ import { faUpload } from '@fortawesome/free-solid-svg-icons';
 })
 export class PrintingComponent implements OnInit {
 
+  printForm!: FormGroup;
+
   error: string = "";
   time: NgbTimeStruct = { hour: 0, minute: 0, second: 0 };
 
-  fileList: GcodeFileList[] = [];
+  printUiData?: PrintServiceData;
+  loading = false;
+  // fileList: GcodeFileList[] = [];
 
   faUpload = faUpload;
 
-  constructor(private session: SessionService, private router: Router, private printService: PrintService, private fileService: FileService) { }
+  constructor(
+    private router: Router, private printService: PrintService,
+    private formBuilder: FormBuilder) { }
 
   ngOnInit(): void {
 
-    this.fileService.fileList().subscribe(files => {
-      console.log("FIle list: " , files);
+    this.loading = true;
+    this.printService.printUiInitInfo().subscribe(data => {
+      console.log("FIle list: ", data);
 
-      this.fileList = files;
+      this.printUiData = data;
+      this.loading = false;
     },
-    err => {
-      
+      err => {
+        this.error = err.Message + ' ' + err.error;
+        this.loading = false;
+      });
+
+    //build form
+    this.printForm = this.formBuilder.group({
+      frm_file_to_print: ['']
     });
-
-    // let printObj = this.session.getSharedObject(Constants.PRINTING) as PrintMessage;
-
-    // if (printObj != null) {
-    //   this.time.hour = printObj.hour;
-    //   this.time.minute = printObj.minute;
-    //   this.time.second = printObj.seconds;
-    // }
 
   }
 
   start() {
 
-    let dateNow = new Date().getTime();
+    const fileToPrint = this.printForm.value.frm_file_to_print;
 
+    console.log("file to print: ", fileToPrint)
 
-    if (this.time.hour === 0 && this.time.minute === 0 && this.time.second === 0) {
-      //please enter a value
-      this.error = "Please enter a time to print";
-      return;
+    if (fileToPrint) {
+
+      this.printService.startPrinting(fileToPrint).subscribe(result => {
+        console.log("Start print result message: " , result)
+        if (result.messageType !== "SUCCESS"){
+          this.error = result.message;
+        }else{
+          this.printUiData.printing = true;
+        }
+      },
+      err => {
+        this.error = err.message + ' ' + err.error;
+      })
+    } else {
+      this.error = "Please select a file to print";
     }
-
-    let newDate = (this.time.hour * 60 * 60 * 1000) + (this.time.minute * 60 * 1000) + (this.time.second * 1000);
-
-    const myDate = new Date(dateNow + newDate);
-
-    let printInfo = new PrintMessage();
-    printInfo.date = myDate;
-    printInfo.started = true;
-    printInfo.hour = this.time.hour;
-    printInfo.minute = this.time.minute;
-    printInfo.seconds = this.time.second;
-
-    // console.log("my date: ", myDate);
-
-    this.printService.startPrinting(myDate).subscribe(result => {
-      this.printService.sendPrintMessage(printInfo);
-      this.session.putSharedObject(Constants.PRINTING, printInfo);
-
-      this.router.navigate(['/']);
-    }, err => {
-      this.error = err.message + ' ' + err.error.error;
-    });
-
 
   }
 
@@ -87,7 +84,7 @@ export class PrintingComponent implements OnInit {
     printInfo.stoped = true;
 
     this.printService.stopPrinting().subscribe(print => {
-      console.log("Stop printing message: " , print);
+      console.log("Stop printing message: ", print);
       this.printService.sendPrintMessage(printInfo);
       this.router.navigate(['/']);
     }, err => {

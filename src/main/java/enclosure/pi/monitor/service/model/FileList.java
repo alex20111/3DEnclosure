@@ -1,4 +1,4 @@
-package enclosure.pi.monitor.printer;
+package enclosure.pi.monitor.service.model;
 
 public class FileList {
 	private String fileName = "";

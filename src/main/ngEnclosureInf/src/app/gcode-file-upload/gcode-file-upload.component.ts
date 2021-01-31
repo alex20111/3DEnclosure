@@ -75,7 +75,6 @@ export class GcodeFileUploadComponent implements OnInit {
         this.files.push(item);
       }
       this.fileDropEl.nativeElement.value = "";
-      // this.uploadFilesSimulator(0);
     } else {
       this.errFile = "File is not a gcode file, cannot upload";
     }

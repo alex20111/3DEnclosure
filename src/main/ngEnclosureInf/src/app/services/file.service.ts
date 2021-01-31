@@ -25,5 +25,5 @@ export class FileService {
 
 export interface GcodeFileList{
   fileName: string;
-  fileSize: string;
+  fileSize?: string;
 }

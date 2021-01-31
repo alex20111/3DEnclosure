@@ -31,6 +31,7 @@ public class Websocket {
 	public void onClose(Session session) {
 		logger.debug("onClose:: " +  session.getId());		
 //		WebSocketHandler.getInstance().processOnClose(session);
+		handler.processOnClose(session);
 	}
 
 	@OnMessage

@@ -9,22 +9,22 @@
     <div class="col-10 ml-1" style="color: white;   border-style: solid;  border-color: white;">
       <div class="mb-1">
         <b> Select print: </b>
+        <form [formGroup]="printForm"> 
+          <div class="input-group ">
+            
+            <span  *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span> 
+            <select *ngIf="!loading"class="form-control" formControlName="frm_file_to_print">
+              <option *ngFor="let file of printUiData.listFiles" [ngValue]="file.fileName" >
+                {{ file.fileName }}
+              </option>
+            </select>
 
+            <div class="input-group-append">
 
-
-        <div class="input-group ">
-          <select class="form-control">
-            <option *ngFor="let file of fileList" [ngValue]="file.fileName">
-              {{ file.fileName }}
-            </option>
-          </select>
-
-          <div class="input-group-append">
-
-            <fa-icon class="input-group-text" [icon]="faUpload" id="basic-addon2" routerLink="/fileUpload"></fa-icon>
+              <fa-icon class="input-group-text" [icon]="faUpload" id="basic-addon2" routerLink="/fileUpload"></fa-icon>
+            </div>
           </div>
-        </div>
-
+        </form>
         <!-- <ngb-timepicker [(ngModel)]="time" [seconds]="true"></ngb-timepicker> -->
 
       </div>
@@ -35,8 +35,8 @@
       <br />
       <hr style="border-color: white" />
       <div class="mt-2">
-        <Button class="btn btn-success mr-1" (click)="start()">Start</Button>
-        <button class="btn btn-danger mr-1" (click)="stop()">Stop</button>
+        <Button [disabled]="printUiData?.printing" class="btn btn-success mr-1" (click)="start()">Start</Button>
+        <button [disabled]="!printUiData?.printing" class="btn btn-danger mr-1" (click)="stop()">Stop</button>
         <button class="btn btn-primary " routerLink="/"> Back </button>
       </div>
     </div>

@@ -23,8 +23,11 @@ import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
+import com.jsoniter.JsonIterator;
+import com.jsoniter.any.Any;
+
 import enclosure.pi.monitor.common.Constants;
-import enclosure.pi.monitor.printer.FileList;
+import enclosure.pi.monitor.service.model.FileList;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
 
@@ -59,7 +62,7 @@ public class FileService {
 
 			if (fileInputStream != null && fileMetaData != null) {
 
-				logger.debug("Got file name: " + fileMetaData.getFileName());
+//				logger.debug("Got file name: " + fileMetaData.getFileName());
 				String fileName = fileMetaData.getFileName();				
 
 				int read = 0;
@@ -74,6 +77,14 @@ public class FileService {
 				out.close();
 
 			}
+			
+			Any fields = JsonIterator.deserialize(formFields);
+			boolean autoPrint = fields.get(0).toBoolean();
+			
+			if (autoPrint) {
+				logger.debug("Auto print enabled.. staring print");
+			}
+			
 
 			msg = new Message(MessageType.SUCCESS, "File Uploaded");
 

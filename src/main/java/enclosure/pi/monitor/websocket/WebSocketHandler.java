@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jsoniter.JsonIterator;
+import com.jsoniter.output.JsonStream;
 
 
 public class WebSocketHandler {
@@ -28,12 +29,12 @@ public class WebSocketHandler {
 		if (msg.getAction() == WsAction.REGISTER) {
 			register(session);
 		}else if (msg.getAction() == WsAction.CLOSE) {
-			closeSession(session);
+			processOnClose(session);
 		}else if (msg.getAction() == WsAction.SEND) {
 			for(UserSession u: userSessions) {
 				
 					logger.debug("Sending to: " + session.getId());
-					u.SendData( "bob");
+					u.SendData(message );
 				
 			}
 		}
@@ -58,13 +59,17 @@ public class WebSocketHandler {
 		
 
 	}
-	private void closeSession(Session session) throws IOException {
+	public void processOnClose(Session session) {
+		try {
 		UserSession us = userSessions.stream().filter(u -> u.getSession().getId() == session.getId()).findAny().orElse(null);
 		
 		if (us != null) {
 			logger.info("Closing removing session: " + userSessions.size());
 			userSessions.remove(us);
 			session.close();
+		}
+		}catch(IOException e) {
+			logger.error("Cannot process on close of session", e);
 		}
 	}
 }
