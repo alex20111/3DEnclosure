@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Message } from '../_model/Message';
+import { Constants } from '../_model/Constants';
 
 
 @Injectable({
@@ -13,11 +14,11 @@ export class ConfigService {
   constructor(private http: HttpClient) { }
 
 	loadConfig(): Observable<Config>{
-		return this.http.get<Config>('http://localhost:8080/web/config/configData');
+		return this.http.get<Config>(`http://${Constants.HOST_ADDRESS}:8080/web/config/configData`);
 	}
 
 	updateConfig(cfg: Config): Observable<Message>{
-		return this.http.post<Message>('http://localhost:8080/web/config/updateConfig', cfg);
+		return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/config/updateConfig`, cfg);
 	}
 
 }

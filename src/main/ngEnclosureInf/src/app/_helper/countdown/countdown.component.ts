@@ -1,5 +1,5 @@
 import { PrintService } from './../../services/print.service';
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { Subscription, interval } from 'rxjs';
 import { PrintMessage } from 'src/app/_model/PrintMessage';
 
@@ -8,13 +8,15 @@ import { PrintMessage } from 'src/app/_model/PrintMessage';
   templateUrl: './countdown.component.html',
   styleUrls: ['./countdown.component.css']
 })
-export class CountdownComponent implements OnInit,  OnDestroy {
+export class CountdownComponent implements OnInit,  OnDestroy , OnChanges{
 
 
   @Input()
   timerStartDate!: Date;
   private subscription!: Subscription;
   
+private savedTimer: Date;
+
   public dateNow = new Date();
   // public dDay = new Date('Jan 01 2021 00:00:00');
   milliSecondsInASecond = 1000;
@@ -30,6 +32,15 @@ export class CountdownComponent implements OnInit,  OnDestroy {
 
   constructor(private printService: PrintService) { }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (this.savedTimer != this.timerStartDate){
+      if (this.subscription){
+        this.subscription.unsubscribe();
+      }
+      this.startTimer();
+    }
+  }
+
   private getTimeDifference () {
       this.timeDifference = this.timerStartDate.getTime() - new  Date().getTime();
       this.allocateTimeUnits(this.timeDifference);
@@ -43,6 +54,11 @@ private allocateTimeUnits (timeDifference: number) {
 }
 
   ngOnInit() {
+   this.startTimer();
+  }
+
+  startTimer(){
+    this.savedTimer = this.timerStartDate;
     this.getTimeDifference(); 
     
      this.subscription = interval(1000)

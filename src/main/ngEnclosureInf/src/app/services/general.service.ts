@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Constants } from '../_model/Constants';
 import { Message } from '../_model/Message';
 
 @Injectable({
@@ -13,13 +14,13 @@ export class GeneralService {
 
   shutdownSystem(): Observable<Message>{
 
-   return this.http.get<Message>('http://localhost:8080/web/general/shutdown');
+   return this.http.get<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/general/shutdown`);
 
   }
 
   dashBoard(): Observable<DashBoard >{
 
-    return this.http.get<DashBoard>('http://localhost:8080/web/general/dashboard');
+    return this.http.get<DashBoard>(`http://${Constants.HOST_ADDRESS}:8080/web/general/dashboard`);
  
 
   }

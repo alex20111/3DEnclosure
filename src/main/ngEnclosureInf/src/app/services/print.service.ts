@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Message } from '../_model/Message';
+import { Constants } from '../_model/Constants';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +21,7 @@ export class PrintService {
     let print = new PrintServiceData();
     print.printFile = fileNamePrint;     
 
-    return  this.http.post<Message>('http://localhost:8080/web/print/start', print);
+    return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/start`, print);
   }
 
   stopPrinting(): Observable<Message>{
@@ -28,11 +29,11 @@ export class PrintService {
     // print.endDate = new Date();
    
 
-    return  this.http.post<Message>('http://localhost:8080/web/print/stop', print);
+    return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/stop`, print);
   }
 
   printUiInitInfo(): Observable<PrintServiceData>{
-    return this.http.get<PrintServiceData>('http://localhost:8080/web/print/initScreen');
+    return this.http.get<PrintServiceData>(`http://${Constants.HOST_ADDRESS}:8080/web/print/initScreen`);
   }
 
   sendPrintMessage(message: PrintMessage){
@@ -52,6 +53,17 @@ export class PrintServiceData{
   printFile: string;
   listFiles?: GcodeFileList[] = [];
   printing: boolean = false;
+
+	//time/date display
+   printTimeSeconds: number = -1;
+   printStarted: Date;
+	 bedTemp: number = -1.0;
+	 bedTempMax: number = -1.0;
+	 nozzleTemp: number = -1.0;
+	 nozzleTempMax: number = -1.0;	
+	 printerBusy: boolean = false;	
+	 lastUpdate: Date = null;
+
 }
 
 

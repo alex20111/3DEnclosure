@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable } from 'rxjs';
+import { Constants } from '../_model/Constants';
 
 @Injectable({
   providedIn: 'root'
@@ -10,18 +11,20 @@ export class PiWebSocketService {
   myWebSocket: WebSocketSubject<SocketMessage>;
   
   constructor() { 
-    this.myWebSocket = webSocket('ws://localhost:8080/printerEvents/');
+    this.myWebSocket = webSocket(`ws://${Constants.HOST_ADDRESS}:8080/printerEvents/`);
   }
 
 
-  connect(): Observable<any> {    
+  connect(): Observable<SocketMessage> { 
 
-    const socketMessage = new SocketMessage();
-    socketMessage.action = "REGISTER";
+       //send websocket registration
+       const socketMessage = new SocketMessage();
+       socketMessage.action = "REGISTER";   
+       this.sendMessage(socketMessage);
 
-    this.sendMessage(socketMessage);
     return this.myWebSocket.asObservable();
   }
+
 
   sendMessage(message: SocketMessage): void {
     console.log('Sending: ', message);
@@ -35,10 +38,7 @@ export class PiWebSocketService {
 
 export class SocketMessage{
   action: string = "SEND";
+  dataType: string = "NONE";
   message: string = "";
 }
-export interface PrintObject{
-  timeInSeconds: number;
-  nozzleTemp: number;
-  bedTemp: number;
-}
+
