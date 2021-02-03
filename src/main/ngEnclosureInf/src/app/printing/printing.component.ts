@@ -25,6 +25,7 @@ export class PrintingComponent implements OnInit {
 
   printUiData?: PrintServiceData;
   loading = false;
+  stoppingLoading = false;
   // fileList: GcodeFileList[] = [];
 
   faUpload = faUpload;
@@ -35,30 +36,30 @@ export class PrintingComponent implements OnInit {
 
   ngOnInit(): void {
 
+      //build form
+      this.printForm = this.formBuilder.group({
+        frm_file_to_print: ['']
+      });
+
     this.loading = true;
     this.printService.printUiInitInfo().subscribe(data => {
-      console.log("FIle list: ", data);
 
       this.printUiData = data;
       this.loading = false;
+      this.printForm.setValue({
+        frm_file_to_print: this.printUiData.printFile
+      });
+
     },
       err => {
         this.error = err.Message + ' ' + err.error;
         this.loading = false;
       });
-
-    //build form
-    this.printForm = this.formBuilder.group({
-      frm_file_to_print: ['']
-    });
-
   }
 
   start() {
 
     const fileToPrint = this.printForm.value.frm_file_to_print;
-
-    console.log("file to print: ", fileToPrint)
 
     if (fileToPrint) {
 
@@ -68,6 +69,7 @@ export class PrintingComponent implements OnInit {
           this.error = result.message;
         }else{
           this.printUiData.printing = true;
+          this.router.navigate(['/']);
         }
       },
       err => {
@@ -83,12 +85,16 @@ export class PrintingComponent implements OnInit {
     let printInfo = new PrintMessage();
     printInfo.stoped = true;
 
+    this.stoppingLoading = true;
+
     this.printService.stopPrinting().subscribe(print => {
       console.log("Stop printing message: ", print);
       this.printService.sendPrintMessage(printInfo);
       this.router.navigate(['/']);
+      this.stoppingLoading = false;
     }, err => {
       this.error = err.message + ' ' + err.error.error;
+      this.stoppingLoading = false;
     });
 
   }

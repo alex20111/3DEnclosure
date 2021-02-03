@@ -35,6 +35,8 @@
           Auto print when upload complete
         </label>
       </div>
-      <button [disabled]="files.length == 0 " class="btn btn-primary" (click)="uploadFile()">Upload</button>
+      <button [disabled]="files.length == 0 " class="btn btn-success" (click)="uploadFile()">Upload</button>
+      <button class="btn btn-primary" routerLink="/print">Back</button>
+
 
 </form>

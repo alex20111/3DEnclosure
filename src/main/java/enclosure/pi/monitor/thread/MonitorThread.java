@@ -40,7 +40,6 @@ public class MonitorThread implements Runnable{
 	LocalDateTime stopFanTimer = null;
 	boolean autoStarted = false;
 
-
 	public MonitorThread(int delay) {
 		logger.debug("Init monitorThread with delay: " + delay );
 		this.delay = delay;

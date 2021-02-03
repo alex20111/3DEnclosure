@@ -39,22 +39,21 @@ public class PrintingService {
 	public Response getPrintUiInfo() {
 		logger.debug("getPrintUiInfo ");		
 		
-		PrinterHandler ph = PrinterHandler.getInstance();//TODO uncomment for prod
-		
+		PrinterHandler ph = PrinterHandler.getInstance();		
 		
 		PrintServiceData psd = new PrintServiceData();
 		
-		psd.setPrinting(ph.isPrinting()); //TODO uncomment for prod
+		psd.setPrinting(ph.isPrinting());
+		if (psd.isPrinting()) {
+			psd.setPrintFile(ph.getPrintData().getPrintFile());
+		}
 		 List<FileList> fileList = Stream.of(new File(Constants.GCODE_DIR).listFiles())
 			      .filter(file -> !file.isDirectory())
 			      .map(file -> new FileList(file.getName(), file.length()))
 			      .collect(Collectors.toList());
-		 logger.debug("File list: " + fileList);
 		 
 		 psd.setListFiles(fileList);
 		  
-		
-
 		return Response.ok().entity(psd).build();
 	}
 	
@@ -82,14 +81,15 @@ public class PrintingService {
 					msg = new Message(MessageType.SUCCESS, "Printing started");
 				} catch (FileNotFoundException e) {
 					msg = new Message(MessageType.WARN, "File " + printData.getPrintFile() + " not found");
+				}catch (IllegalAccessError ae) {
+					msg = new Message(MessageType.WARN, "Printer not connected");
 				}
 				
 			}else {				
 				msg = new Message(MessageType.WARN, "Printer is already printing");
 			}
 			
-		}
-		
+		}		
 
 		return Response.status(status).entity(msg).build();
 	}

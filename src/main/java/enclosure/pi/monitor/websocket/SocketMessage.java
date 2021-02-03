@@ -3,13 +3,19 @@ package enclosure.pi.monitor.websocket;
 public class SocketMessage {
 	
 	private WsAction action;
-	private String dataType = ""; // identify the data type tat is to be sent. Ex: pintting info...
+	private DataType dataType = DataType.NONE; // identify the data type tat is to be sent. Ex: pintting info...
 	private String message = "" ; // could contain an onject in JSON.
 	
 	public SocketMessage() {}
 	
 	public SocketMessage(WsAction action, String message) {
 		this.action = action;
+		this.message = message;
+	}
+	
+	public SocketMessage(WsAction action, DataType type, String message) {
+		this.action = action;
+		this.dataType = type;
 		this.message = message;
 	}
 	
@@ -25,18 +31,24 @@ public class SocketMessage {
 	public void setMessage(String message) {
 		this.message = message;
 	}
-
-	public String getDataType() {
+	public DataType getDataType() {
 		return dataType;
 	}
 
-	public void setDataType(String dataType) {
+	public void setDataType(DataType dataType) {
 		this.dataType = dataType;
 	}
+	
+	public boolean isPrintRelated() {
+		return this.dataType == DataType.PRINT_DATA;
+	}
+	
 
 	@Override
 	public String toString() {
-		return "SocketMessage [action=" + action + ", message=" + message + "]";
+		return "SocketMessage [action=" + action + ", dataType=" + dataType + ", message=" + message + "]";
 	}
+
+
 
 }

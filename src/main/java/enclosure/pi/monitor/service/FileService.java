@@ -62,7 +62,6 @@ public class FileService {
 
 			if (fileInputStream != null && fileMetaData != null) {
 
-//				logger.debug("Got file name: " + fileMetaData.getFileName());
 				String fileName = fileMetaData.getFileName();				
 
 				int read = 0;
@@ -83,6 +82,7 @@ public class FileService {
 			
 			if (autoPrint) {
 				logger.debug("Auto print enabled.. staring print");
+				//TODO auto printing here
 			}
 			
 

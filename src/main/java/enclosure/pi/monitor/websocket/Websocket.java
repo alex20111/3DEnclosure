@@ -24,7 +24,7 @@ public class Websocket {
 	
 	@OnOpen
 	public void onOpen(Session session) {
-		logger.debug("onOpen:: " + session.getId());        
+//		logger.debug("onOpen:: " + session.getId());        
 		session.setMaxIdleTimeout(86400000);// the session last 24 hours or when the terminate connection is 
 	}
 	@OnClose
@@ -36,7 +36,7 @@ public class Websocket {
 
 	@OnMessage
 	public void onMessage(String message, Session session) {
-		logger.debug("onMessage:: From=" + session.getId() + " Message=" + message);
+//		logger.debug("onMessage:: From=" + session.getId() + " Message=" + message);
 
 		if(handler == null) {
 			handler = new WebSocketHandler();

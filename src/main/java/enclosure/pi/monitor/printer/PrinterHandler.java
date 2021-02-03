@@ -1,7 +1,9 @@
 package enclosure.pi.monitor.printer;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -16,6 +18,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jsoniter.output.JsonStream;
 import com.pi4j.io.serial.Baud;
 import com.pi4j.io.serial.DataBits;
 import com.pi4j.io.serial.FlowControl;
@@ -28,6 +31,10 @@ import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
 
 import enclosure.pi.monitor.common.Constants;
+import enclosure.pi.monitor.service.model.PrintServiceData;
+import enclosure.pi.monitor.thread.SendSMSThread;
+import enclosure.pi.monitor.thread.ThreadManager;
+import enclosure.pi.monitor.websocket.DataType;
 import enclosure.pi.monitor.websocket.SocketMessage;
 import enclosure.pi.monitor.websocket.WebSocketClient;
 import enclosure.pi.monitor.websocket.WsAction;
@@ -43,9 +50,6 @@ public class PrinterHandler {
 
 	private Path filePath;
 
-	boolean cmdNotSent = true;
-	int cnt = 0;
-
 	boolean keepingConnectionAlive = true;
 	private printerSerialListener listener = null;
 
@@ -54,10 +58,11 @@ public class PrinterHandler {
 	private boolean printing = false;
 
 	private static Object monitor = new Object();
-	private StringBuilder outputs = new StringBuilder();
+	//	private StringBuilder outputs = new StringBuilder();
 
 	private Thread printingThread;
-	//TODO push pre-heat sequence to angular as well as time.
+
+	private PrintServiceData printData = new PrintServiceData();
 
 	public static PrinterHandler getInstance() {
 		if (printerHandler == null) {
@@ -71,11 +76,10 @@ public class PrinterHandler {
 		return printerHandler;
 	}	
 
-
 	private PrinterHandler() { 
 		logger.debug("Starting: PrinterHandler");
 
-				filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+		filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
 
 		connect();
 	}	
@@ -95,7 +99,6 @@ public class PrinterHandler {
 				.parity(Parity.NONE)
 				.stopBits(StopBits._1)
 				.flowControl(FlowControl.NONE);
-
 
 				while(keepingConnectionAlive) {
 					try {
@@ -131,7 +134,6 @@ public class PrinterHandler {
 								serial.close();
 							}
 						}
-
 					}catch(Exception ex) {
 						logger.error("Thread printer: " , ex);
 					}
@@ -140,7 +142,6 @@ public class PrinterHandler {
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
-
 				}
 			}
 
@@ -149,8 +150,8 @@ public class PrinterHandler {
 
 	public void sendGcodeFileToPrinter(String file) throws FileNotFoundException, IllegalAccessError {
 
-		outputs = new StringBuilder("Starting printing");
-		
+		//		outputs = new StringBuilder("Starting printing");
+
 		if (isConnected) {
 			if (printingThread == null && !printing) {
 
@@ -158,60 +159,88 @@ public class PrinterHandler {
 
 				if (Files.exists(gcode)) {
 					printing = true;
-					RandomAccessFile gcodeFile = new RandomAccessFile(gcode.toFile().getAbsoluteFile(), "r");
+
+					//					RandomAccessFile gcodeFile = new RandomAccessFile(gcode.toFile().getAbsoluteFile(), "r");
+
+					monitor = new Object();
+					printData = new PrintServiceData();
+					printData.setPrintFile(file);
+					printData.setPrinting(true);
 
 					printingThread = new Thread(new Runnable() {
-						
+
 						@Override
 						public void run() {
-							
+
+							BufferedReader objReader = null;
+
 							try {
+								objReader = new BufferedReader(new FileReader(gcode.toFile()));
 								sendingGcode = true;
 								String str;
-								while ((str = gcodeFile.readLine()) != null && sendingGcode) {
+								while ((str = objReader.readLine()) != null && sendingGcode) {
 									if (!str.startsWith(";") && str.length() > 0) {
-										serial.write(str + "\r\n");
+										//										outputs.append("\nWriting: " + str);
+										serial.write(str + "\r\n");										
 										synchronized(monitor) {							
 											monitor.wait();							
 										}
 
-									}else if (str.contains("TIME")) {
+									}else if (str.contains("TIME") && !str.contains("TIME_ELAPSED")) {
+										logger.debug("Send time info: ");
 										try {
-											double timeInSec = Double.parseDouble(str.substring(str.indexOf(":") + 1, str.length()));
+											String timeStr = str.substring(str.indexOf(":") + 1, str.length()).trim();
+											double timeInSec = Double.parseDouble(timeStr);
 											int sec = (int)Math.round(timeInSec);
-											int p1 = sec % 60;
-											int p2 = sec / 60;
-											int p3 = p2 % 60;
-											p2 = p2 / 60;
-											//				        output.append("Time remaining: " +  p2 + ":" + p3 + ":" + p1);
-											System.out.print( p2 + ":" + p3 + ":" + p1);
-											System.out.print("\n");
-											SocketMessage msg = new SocketMessage(WsAction.SEND, "Time: "+ p2 + ":" + p3 + ":" + p1);
-											WebSocketClient.getInstance().sendMessage(msg);
-										}catch(NumberFormatException nfx) {
+											logger.debug("Send time info: timeStr:  " + timeStr + " timeInSec: " + timeInSec + " sec: " + sec );
 
-										}
+											printData.setPrintTimeSeconds(sec + Constants.STARTING_OFFSET);
+											printData.setPrintStarted(LocalDateTime.now().toString());
+											SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_TOTAL_TIME, JsonStream.serialize(printData));
+											WebSocketClient.getInstance().sendMessage(msg);
+
+										}catch(NumberFormatException nfx) {}
 									}
 								}
-								printing =  false;
-								sendingGcode = false;
-								gcodeFile.close();
+
+
+
 								logger.debug("Looop done printing sending websocket message");
-								SocketMessage msg = new SocketMessage(WsAction.SEND, "Printing Done!");
+								printData.setPrintTimeSeconds(0);
+								printData.setPrinting(false);
+								printData.setPrinterBusy(false);
+								SocketMessage msg = new SocketMessage(WsAction.SEND, DataType.PRINT_DONE, "Print Done!!" );
 								WebSocketClient.getInstance().sendMessage(msg);
+								//send SMS message
+								ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
 							}catch(IOException e) {
-								printing =  false;
-								sendingGcode = false;
-//								stopPrinting(); 
+								//								printing =  false;
+								//								sendingGcode = false;
+								stopPrinting(); 
+								//								writeOutputs();
 								logger.error("Error in sendGcodeFileToPrinter" , e);
 							}catch (InterruptedException e) {
+								logger.debug("thread inturrepted", e);
 								Thread.currentThread().interrupt();
-								sendingGcode = false;
-							
+								//								writeOutputs();
+
 							}
-							
-							writeOutputs();
+							printing =  false;
+							sendingGcode = false;
+
+							//							writeOutputs();
 							printingThread = null;
+							printData = new PrintServiceData();
+
+							try {
+								if (objReader != null) {
+									objReader.close();
+								}
+							}catch(IOException e) {
+								logger.error("Problem closing file", e);
+							}
+
+							logger.debug("Printer thread finished");
 						}
 					});
 					printingThread.start();
@@ -239,62 +268,74 @@ public class PrinterHandler {
 
 	public void stopPrinting() {
 		sendingGcode = false;
-//		monitor.notifyAll();
+
 		if (printingThread != null) {
 			printingThread.interrupt();
-			
+
 			try {
 				printingThread.join(2000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.debug("Error ing", e);
 			}
-			
-			printingThread = null;
-			
-			List<String> endGcode = new ArrayList<>();
-			endGcode.add("M140 S0\r\n");
-			endGcode.add("M107\r\n");
-			endGcode.add("G91 ;Relative positionning\r\n");
-			endGcode.add("G1 E-2 F2700 ;Retract a bi");
-			endGcode.add("G1 E-2 Z0.2 F2400 ;Retract and raise Z\r\n");
-			endGcode.add("G1 X5 Y5 F3000 ;Wipe out\r\n");
-			endGcode.add("G1 Z10 ;Raise Z more\r\n");
-			endGcode.add("G90 ;Absolute positionning\r\n");
-			endGcode.add("G1 X0 Y235 ;Present print\r\n");
-			endGcode.add("M106 S0 ;Turn-off fan\r\n");
-			endGcode.add("M104 S0 ;Turn-off hotend\r\n");
-			endGcode.add("M140 S0 ;Turn-off bed\r\n");
-			endGcode.add("M84 X Y E ;Disable all steppers but Z\r\n");
-			endGcode.add("M82 ;absolute extrusion mode\r\n");
-			endGcode.add("M104 S0\r\n");
 
+			logger.debug("Starting stop printing commands");
+			printData = new PrintServiceData();
+			//			outputs = new StringBuilder();
+			printingThread = null;
+
+			monitor = new Object();
+
+			List<String> endGcode = new ArrayList<>();
+			endGcode.add("M108");
+			endGcode.add("M140 S0");
+			endGcode.add("M107");
+			endGcode.add("G91 ;Relative positionning");
+			endGcode.add("G1 E-2 F2700 ;Retract a bit");
+			endGcode.add("G1 E-2 Z0.2 F2400 ;Retract and raise Z");
+			endGcode.add("G1 X5 Y5 F3000 ;Wipe out");
+			endGcode.add("G1 Z10 ;Raise Z more");
+			endGcode.add("G90 ;Absolute positionning");
+			//			endGcode.add("G1 X0 Y235 ;Present print");
+			endGcode.add("M106 S0 ;Turn-off fan");
+			endGcode.add("M104 S0 ;Turn-off hotend");
+			endGcode.add("M140 S0 ;Turn-off bed");
+			endGcode.add("M84 X Y E ;Disable all steppers but Z");
+			endGcode.add("M82 ;absolute extrusion mode");
+			endGcode.add("M104 S0");
+
+			sendingGcode = true;
 			try {
 				for (String str : endGcode) {
-					serial.write(str );
+					//					outputs.append("\nWrite stop: " + str);
+					serial.write(str + "\r\n" );
 					synchronized(monitor) {							
 						monitor.wait();							
 					}
 				}
 
 				printing = false;
-				writeOutputs();
+				sendingGcode = false;
+				//				writeOutputs();
 			}catch(Exception ex) {
 				logger.error("Error in stopping printer", ex);
 			}
 		}
 
-		
+
 	}
-	
-	private void writeOutputs() {
-		try {
-			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+	public PrintServiceData getPrintData() {
+		return this.printData;
 	}
+
+	//	private void writeOutputs() {
+	//		try {
+	//			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+	//		} catch (IOException e) {
+	//			// TODO Auto-generated catch block
+	//			e.printStackTrace();
+	//		}
+	//	}
 
 	class printerSerialListener implements SerialDataEventListener{
 
@@ -302,29 +343,48 @@ public class PrinterHandler {
 		public void dataReceived(SerialDataEvent event) {
 			try {
 				String eventString =  event.getAsciiString();
-
+				//				logger.debug("SerialDataEvent: " + eventString);
+				//				outputs.append("\nSerialDataEvent: " + eventString);
 
 				if (sendingGcode) {
 					if (eventString.contains("ok")){
-						//						okRecived = true;
-						//						System.out.println("Ok recieved: " + ok);
-						outputs.append("\nOk recieved: " + eventString);
 
 						synchronized(monitor) {
 							monitor.notifyAll();
 						}
 					}else {
-						//						System.out.println("!Other than ok!!: " + ok);
-						//						output.append("\n!!Other than ok!!: " + ok);
-						outputs.append("\"\\n!!Other than ok!!:  " + eventString);
+						if (eventString.contains("T:") && eventString.contains("B:")) {
+							sendTempData(eventString);
+						}
 					}
 				}
 
 
 			}catch(Exception ex) {
-				ex.printStackTrace();
+				logger.error("error in dataReceived", ex);
 			}
 
+		}
+
+		private void sendTempData(String evnt) {
+			logger.debug("sendTempData: " + evnt);
+			try {
+				String strSplit[] = evnt.trim().split(" ");
+
+				String nozzle = strSplit[0].substring(strSplit[0].indexOf("T:") + 2 , strSplit[0].length()).trim();
+				String nozzleMax = strSplit[1].substring(strSplit[1].indexOf("/") + 1 , strSplit[1].length()).trim();
+				String bed = strSplit[2].substring(strSplit[2].indexOf("B:") + 2 , strSplit[2].length()).trim();
+				String bedMax = strSplit[3].substring(strSplit[3].indexOf("/") + 1 , strSplit[3].length()).trim();
+				printData.setBedTemp(Float.valueOf(bed));
+				printData.setBedTempMax(Float.valueOf(bedMax));
+				printData.setNozzleTemp(Float.valueOf(nozzle));
+				printData.setNozzleTempMax(Float.valueOf(nozzleMax));
+
+				SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
+				WebSocketClient.getInstance().sendMessage(msg);
+			}catch (Exception e) {
+				logger.error("Exception in sendTempData" , e);
+			}
 		}
 
 	}
