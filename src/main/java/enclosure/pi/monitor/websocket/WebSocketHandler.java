@@ -38,7 +38,7 @@ public class WebSocketHandler {
 				this.printData = message;
 			}
 			for(UserSession u: userSessions) {				
-				logger.debug("Sending to: " + session.getId());
+				logger.debug("Sending to: " + u.getSession().getId());
 				u.SendData(message );
 
 			}

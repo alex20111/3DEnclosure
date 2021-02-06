@@ -5,10 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,7 +18,6 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fazecast.jSerialComm.SerialPort;
 import com.jsoniter.output.JsonStream;
 import com.pi4j.io.serial.Baud;
 import com.pi4j.io.serial.DataBits;
@@ -43,43 +39,44 @@ import enclosure.pi.monitor.websocket.SocketMessage;
 import enclosure.pi.monitor.websocket.WebSocketClient;
 import enclosure.pi.monitor.websocket.WsAction;
 
-public class PrinterHandler {
+public class PrintHandlerBackup {
 
 	private static final Logger logger = LogManager.getLogger(PrinterHandler.class);
 
-	private static PrinterHandler printerHandler;
+	private static PrintHandlerBackup printerHandler;
 
-	private SerialPort comPort;
-	private InputStream in;
-	//	private SerialConfig config;
+	private Serial serial;
+	private SerialConfig config;
 
 	private Path filePath;
-	private StringBuilder outputs = new StringBuilder();
 
 	boolean keepingConnectionAlive = true;
-	//	private printerSerialListener listener = null;
+	private printerSerialListener listener = null;
 
 	private boolean isConnected = false;
+	private boolean sendingGcode = false;
 	private boolean printing = false;
-	private boolean forceStopped = false;
+
+	private static Object monitor = new Object();
+	//	private StringBuilder outputs = new StringBuilder();
 
 	private Thread printingThread;
 
 	private PrintServiceData printData = new PrintServiceData();
 
-	public static PrinterHandler getInstance() {
+	public static PrintHandlerBackup getInstance() {
 		if (printerHandler == null) {
-			synchronized (PrinterHandler.class) {
+			synchronized (PrintHandlerBackup.class) {
 				if(printerHandler == null) {
 					logger.info( "printerHandler initialized");
-					printerHandler = new PrinterHandler();
+					printerHandler = new PrintHandlerBackup();
 				}
 			}
 		}
 		return printerHandler;
 	}	
 
-	private PrinterHandler() { 
+	private PrintHandlerBackup() { 
 		logger.debug("Starting: PrinterHandler");
 
 		filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
@@ -92,45 +89,56 @@ public class PrinterHandler {
 
 			@Override
 			public void run() {
+				String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0";
 
+				serial = SerialFactory.createInstance();
+				config = new SerialConfig();
+				config.device(usbPort)
+				.baud(Baud._115200)
+				.dataBits(DataBits._8)
+				.parity(Parity.NONE)
+				.stopBits(StopBits._1)
+				.flowControl(FlowControl.NONE);
 
 				while(keepingConnectionAlive) {
 					try {
-						logger.debug("Serial is open: " + (comPort != null ? comPort.isOpen() : "false") );
-						
-						checkIfPortExsit("bob");
+						logger.debug("Serial is open: " + serial.isOpen() + " Closed: " + serial.isClosed() );
 
-						if (comPort == null || !comPort.isOpen()) {
-							
-							comPort = SerialPort.getCommPort("/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0");
+						if (!serial.isOpen()) {
+							try {
+								serial.open(config);
 
-							comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-							comPort.setBaudRate(115200);
-							comPort.setNumDataBits(8);
-							comPort.setNumStopBits(SerialPort.ONE_STOP_BIT);
-							comPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);
+								if (listener != null && serial != null) {
+									logger.debug("Printer listener not null, removing");
+									serial.removeListener(listener);
+									listener = null;
+								}
 
-							boolean portOpen = comPort.openPort();
-
-							if (portOpen) {
+								listener = new printerSerialListener();
+								serial.addListener(listener);
 								logger.info("Connected to printer");
 								isConnected = true;
-								in = comPort.getInputStream();
-							}
-							else {
-								logger.info("Could not connect to printer , retrying in 10 sec. " );
-							}
 
-						}else if (comPort != null && comPort.isOpen() && !printing) {
-							//test to see if printer is still connected. 
-							sendCommand("M31\r\n");
-							logger.debug("comport OPENNNNNNNN");
+							} catch (IOException e) {
+								logger.info("Could not connect to printer , retrying in 5 sec. Message: " + e.getMessage() );
+							}
+						}else if (serial != null && serial.isOpen()) {
+							//test if can get RTS
+							try {
+								boolean ok = serial.getDSR();
+//								logger.debug("dsr: " + ok);						
+
+							}catch(IOException | IllegalStateException e) {
+								logger.info("Cannot contact printer, disconnecting");
+								isConnected = false;
+								serial.close();
+							}
 						}
 					}catch(Exception ex) {
 						logger.error("Thread printer: " , ex);
 					}
 					try {
-						Thread.sleep(10000);
+						Thread.sleep(5000);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
@@ -142,6 +150,8 @@ public class PrinterHandler {
 
 	public void sendGcodeFileToPrinter(String file) throws FileNotFoundException, IllegalAccessError {
 
+		//		outputs = new StringBuilder("Starting printing");
+
 		if (isConnected) {
 			if (printingThread == null && !printing) {
 
@@ -149,25 +159,32 @@ public class PrinterHandler {
 
 				if (Files.exists(gcode)) {
 					printing = true;
-					forceStopped = false;
+
+					//					RandomAccessFile gcodeFile = new RandomAccessFile(gcode.toFile().getAbsoluteFile(), "r");
+
+					monitor = new Object();
+					printData = new PrintServiceData();
+					printData.setPrintFile(file);
+					printData.setPrinting(true);
 
 					printingThread = new Thread(new Runnable() {
+
 						@Override
 						public void run() {
 
-							printData = new PrintServiceData();
-							printData.setPrintFile(file);
-							printData.setPrinting(true);
+							BufferedReader objReader = null;
 
-							outputs.append("!!! -- Starting print -- !!!\n");
-								try (
-									BufferedReader objReader = new BufferedReader(new FileReader(gcode.toFile()))){
-
+							try {
+								objReader = new BufferedReader(new FileReader(gcode.toFile()));
+								sendingGcode = true;
 								String str;
-								while ((str = objReader.readLine()) != null && printing) {
+								while ((str = objReader.readLine()) != null && sendingGcode) {
 									if (!str.startsWith(";") && str.length() > 0) {
-								
-										sendCommand(str);
+										//										outputs.append("\nWriting: " + str);
+										serial.write(str + "\r\n");										
+										synchronized(monitor) {							
+											monitor.wait();							
+										}
 
 									}else if (str.contains("TIME") && !str.contains("TIME_ELAPSED")) {
 										logger.debug("Send time info: ");
@@ -184,11 +201,9 @@ public class PrinterHandler {
 
 										}catch(NumberFormatException nfx) {}
 									}
-
-									if (forceStopped) {
-										throw new InterruptedException("Forced interrupted by user");
-									}
 								}
+
+
 
 								logger.debug("Looop done printing sending websocket message");
 								printData.setPrintTimeSeconds(0);
@@ -198,21 +213,33 @@ public class PrinterHandler {
 								WebSocketClient.getInstance().sendMessage(msg);
 								//send SMS message
 								ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
-
 							}catch(IOException e) {
+								//								printing =  false;
+								//								sendingGcode = false;
 								stopPrinting(); 
+								//								writeOutputs();
 								logger.error("Error in sendGcodeFileToPrinter" , e);
-							}
-							catch (InterruptedException e) {
+							}catch (InterruptedException e) {
 								logger.debug("thread inturrepted", e);
 								Thread.currentThread().interrupt();
+								//								writeOutputs();
+
 							}
 							printing =  false;
+							sendingGcode = false;
+
+							//							writeOutputs();
 							printingThread = null;
 							printData = new PrintServiceData();
 
-							outputs.append("!!! == print thread finished == !!!\n");
-							writeOutputs();
+							try {
+								if (objReader != null) {
+									objReader.close();
+								}
+							}catch(IOException e) {
+								logger.error("Problem closing file", e);
+							}
+
 							logger.debug("Printer thread finished");
 						}
 					});
@@ -240,26 +267,23 @@ public class PrinterHandler {
 	}
 
 	public void stopPrinting() {
-		logger.debug("Stopping printing!!");
-		outputs.append("\n!!! == Stop print == !!!\n");
-		
-		
-		printing = false;
+		sendingGcode = false;
+
 		if (printingThread != null) {
 			printingThread.interrupt();
-			forceStopped = true;
 
 			try {
-				printingThread.join(3000);
+				printingThread.join(2000);
 			} catch (InterruptedException e) {
 				logger.debug("Error ing", e);
 			}
 
 			logger.debug("Starting stop printing commands");
 			printData = new PrintServiceData();
+			//			outputs = new StringBuilder();
 			printingThread = null;
 
-			forceStopped = false; // reset so we can send commands..
+			monitor = new Object();
 
 			List<String> endGcode = new ArrayList<>();
 			endGcode.add("M108");
@@ -279,18 +303,23 @@ public class PrinterHandler {
 			endGcode.add("M82 ;absolute extrusion mode");
 			endGcode.add("M104 S0");
 
-
+			sendingGcode = true;
 			try {
 				for (String str : endGcode) {
-					sendCommand(str);
+					//					outputs.append("\nWrite stop: " + str);
+					serial.write(str + "\r\n" );
+					synchronized(monitor) {							
+						monitor.wait();							
+					}
 				}
+
 				printing = false;
+				sendingGcode = false;
+				//				writeOutputs();
 			}catch(Exception ex) {
 				logger.error("Error in stopping printer", ex);
 			}
 		}
-		outputs.append("!!! == Stop print END  == !!!\n");
-		writeOutputs();
 
 
 	}
@@ -299,102 +328,62 @@ public class PrinterHandler {
 		return this.printData;
 	}
 
-	private void sendCommand(String command) throws IOException, InterruptedException {
-		outputs.append("Writing: " + command + "\n");
-		String s2cmd = command + "\r\n";
-		byte[] toB = s2cmd.getBytes();
-		comPort.writeBytes(toB, toB.length);
-		boolean okFound = false;
+	//	private void writeOutputs() {
+	//		try {
+	//			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+	//		} catch (IOException e) {
+	//			// TODO Auto-generated catch block
+	//			e.printStackTrace();
+	//		}
+	//	}
 
-		while(!okFound) {
-			if (comPort.bytesAvailable() > -1) {
-				try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
+	class printerSerialListener implements SerialDataEventListener{
 
-					String line;
-					while( (line = br.readLine() ) != null && !forceStopped) {
-						outputs.append("Response: " + line + "\n");
-						if (line.contains("ok")) {
-							okFound = true;
-							break;
-						}else if (line.contains("T:") && line.contains("B:")) {
-							sendTempData(line);
+		@Override
+		public void dataReceived(SerialDataEvent event) {
+			try {
+				String eventString =  event.getAsciiString();
+
+				if (sendingGcode) {
+					if (eventString.contains("ok")){
+
+						synchronized(monitor) {
+							monitor.notifyAll();
+						}
+					}else {
+						if (eventString.contains("T:") && eventString.contains("B:")) {
+							sendTempData(eventString);
 						}
 					}
-					
-					if (forceStopped) {
-						throw new InterruptedException("Forced stopped command");
-					}
 				}
+
+
+			}catch(Exception ex) {
+				logger.error("error in dataReceived", ex);
+			}
+
+		}
+
+		private void sendTempData(String evnt) {
+			logger.debug("sendTempData: " + evnt);
+			try {
+				String strSplit[] = evnt.trim().split(" ");
+
+				String nozzle = strSplit[0].substring(strSplit[0].indexOf("T:") + 2 , strSplit[0].length()).trim();
+				String nozzleMax = strSplit[1].substring(strSplit[1].indexOf("/") + 1 , strSplit[1].length()).trim();
+				String bed = strSplit[2].substring(strSplit[2].indexOf("B:") + 2 , strSplit[2].length()).trim();
+				String bedMax = strSplit[3].substring(strSplit[3].indexOf("/") + 1 , strSplit[3].length()).trim();
+				printData.setBedTemp(Float.valueOf(bed));
+				printData.setBedTempMax(Float.valueOf(bedMax));
+				printData.setNozzleTemp(Float.valueOf(nozzle));
+				printData.setNozzleTempMax(Float.valueOf(nozzleMax));
+
+				SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
+				WebSocketClient.getInstance().sendMessage(msg);
+			}catch (Exception e) {
+				logger.error("Exception in sendTempData" , e);
 			}
 		}
+
 	}
-	private boolean verifyPrinterConnected() {  //TODO !!!!!!!!!!!!!
-	
-		String s2cmd = "M31\r\n";
-		byte[] toB = s2cmd.getBytes();
-		comPort.writeBytes(toB, toB.length);
-		boolean okFound = false;
-
-		while(!okFound) {
-			if (comPort.bytesAvailable() > -1) {
-				try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
-
-					String line;
-					while( (line = br.readLine() ) != null && !forceStopped) {
-						outputs.append("Response: " + line + "\n");
-						if (line.contains("ok")) {
-							okFound = true;
-							break;
-						}else if (line.contains("T:") && line.contains("B:")) {
-							sendTempData(line);
-						}
-					}
-				}catch(IOException e) {
-					logger.error("Error in verifying if printer exist: " , e);
-				}
-			}
-		}
-		return false;
-	}
-
-	private void sendTempData(String evnt) {
-		logger.debug("sendTempData: " + evnt);
-		try {
-			String strSplit[] = evnt.trim().split(" ");
-
-			String nozzle = strSplit[0].substring(strSplit[0].indexOf("T:") + 2 , strSplit[0].length()).trim();
-			String nozzleMax = strSplit[1].substring(strSplit[1].indexOf("/") + 1 , strSplit[1].length()).trim();
-			String bed = strSplit[2].substring(strSplit[2].indexOf("B:") + 2 , strSplit[2].length()).trim();
-			String bedMax = strSplit[3].substring(strSplit[3].indexOf("/") + 1 , strSplit[3].length()).trim();
-			printData.setBedTemp(Float.valueOf(bed));
-			printData.setBedTempMax(Float.valueOf(bedMax));
-			printData.setNozzleTemp(Float.valueOf(nozzle));
-			printData.setNozzleTempMax(Float.valueOf(nozzleMax));
-
-			SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
-			WebSocketClient.getInstance().sendMessage(msg);
-		}catch (Exception e) {
-			logger.error("Exception in sendTempData" , e);
-		}
-	}
-	
-	private void writeOutputs() {
-		try {
-			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
-	private boolean checkIfPortExsit(String port) {
-		SerialPort[] ports = SerialPort.getCommPorts();
-		
-		for(SerialPort sp: ports) {
-			logger.debug("PORT NAMES: " + sp.getDescriptivePortName() + " " + sp.getPortDescription() + " " + sp.getSystemPortName());
-//			System.out.println(sp.getDescriptivePortName());
-		}
-		return true;
-	}
-
 }

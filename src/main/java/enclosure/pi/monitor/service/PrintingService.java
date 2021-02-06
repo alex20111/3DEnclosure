@@ -52,6 +52,8 @@ public class PrintingService {
 			      .map(file -> new FileList(file.getName(), file.length()))
 			      .collect(Collectors.toList());
 		 
+		 
+		 //TODO also list files from SD CARD.. we will be able to print from them..
 		 psd.setListFiles(fileList);
 		  
 		return Response.ok().entity(psd).build();

@@ -160,7 +160,7 @@ public class MonitorThread implements Runnable{
 	}
 	private void processFireAlarm(SharedData sd) throws IllegalStateException, IOException {
 
-		logger.debug("processFireAlarm");
+//		logger.debug("processFireAlarm");
 
 		//check sensors and if alarm is set, send it.. if fire..shut down ventilation... send alarm in 3 steps 1st one warning possible.. 30 sec after re-confirm.
 		int smokeSensor = getMq2Sensor(sd);

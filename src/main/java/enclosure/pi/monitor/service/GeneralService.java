@@ -34,7 +34,7 @@ public class GeneralService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response dashBoard() {
 		
-		logger.debug("dashBoard. ");
+//		logger.debug("dashBoard. ");
 
 
 		Message msg = new Message(MessageType.ERROR, "Severe error in dashBoard");

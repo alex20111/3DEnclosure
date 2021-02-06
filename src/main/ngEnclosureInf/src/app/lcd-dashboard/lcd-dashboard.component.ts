@@ -1,7 +1,7 @@
 import { PiWebSocketService, SocketMessage } from './../services/pi-web-socket.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
 import { GeneralService, DashBoard } from './../services/general.service';
-import { Component, OnDestroy, OnInit, ɵConsole } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { interval, Subscription, timer } from 'rxjs';
 import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
 import { LightService } from '../services/light.service';
@@ -25,7 +25,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   message: string = '';
   printMessage: string;
   printData: PrintServiceData;
-  time: number = 0;;
 
   dashBoardTimer: Subscription | undefined;
   printerSubs: Subscription;
@@ -88,9 +87,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     });
     this.wsSocket.connect().subscribe(wsReturn => {
       console.log("WebSocket result" , wsReturn);
-      if (wsReturn.dataType === "PRINT_DATA"){
+    
         this.webSocketData(wsReturn);
-      }
     },
     err => {
       console.log("Web Socket error!!!" , err);
@@ -163,20 +161,22 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   }
   //handle websocket data
   webSocketData(message: SocketMessage){ 
-      if (message.dataType == "PRINT_DATA" || message.dataType == "PRINT_TOTAL_TIME"){
+      if (message.dataType === "PRINT_DATA" || message.dataType === "PRINT_TOTAL_TIME"){
         let data: PrintServiceData = JSON.parse(message.message);
         this.printData = data;
         if (data.printing){
-          if (!this.printerSubs){
-            
+          if (!this.printerSubs){ //timer to display print time            
            
             let printStartedDate = new Date(data.printStarted);
+
+
             console.log("Unscbedddd  starting: ", printStartedDate);
+            let totPrintTime = this.getTotalTime(data.printTimeSeconds);
               this.printerSubs = interval(1000).subscribe(() => {
                 let totalSeconds = Math.floor(
                   (new Date().getTime() - printStartedDate.getTime()  ) / 1000
                 );
-            
+
                 let hours = 0;
                 let minutes = 0;
                 let seconds = 0;
@@ -189,19 +189,18 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
                 if (totalSeconds >= 60) {
                   minutes = Math.floor(totalSeconds / 60);
                   totalSeconds -= 60 * minutes;
-                }
-            
+                }            
                 seconds = totalSeconds;
-                // console.log("Time: " , hours, minutes, seconds);
 
-                this.printMessage = `${hours} h ${minutes} m ${seconds} s / add total here`;
+                this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
                 // console.log("Hours: min sec: ", hours, minutes, seconds );
               });
             }
 
           }
                 
-      }else if (message.dataType == "PRINT_DONE"){
+      }else if (message.dataType === "PRINT_DONE"){
+        console.log("Print thread done!!!", message.message)
         this.printMessage = message.message;
         this.printData = undefined;
         if (this.printerSubs){
@@ -209,5 +208,24 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         }
       }
 
+  }
+
+  private getTotalTime(sec: number): string {
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+
+    if (sec >= 3600) {
+      hours = Math.floor(sec / 3600);
+      sec -= 3600 * hours;
+    }
+
+    if (sec >= 60) {
+      minutes = Math.floor(sec / 60);
+      sec -= 60 * minutes;
+    }            
+    seconds = sec;
+
+    return `${hours} h ${minutes} m ${seconds} s`;
   }
 }

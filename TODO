@@ -29,9 +29,9 @@ TODO:
  
 	
 //TODO main screen DASH board 		
-	//push pre-heat sequence to angular as well as time.
-	//when you click on print from the print screen, the dashboard banner will 1st display temp of nozzle and temp of bed heating up.
-	//after the time estimated will be displayed. 
+	//push pre-heat sequence to angular as well as time.!!DONE!!
+	//when you click on print from the print screen, the dashboard banner will 1st display temp of nozzle and temp of bed heating up. !!DONE!!
+	//after the time estimated will be displayed.  !!DONE!!
 	//if any errors, it will be displayed there also..
 --> java web socket that will push that information.
 

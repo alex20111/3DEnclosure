@@ -100,16 +100,13 @@ public class ArduinoHandler {
 
 	}
 
-	//TODO  just added start and end markers.. needs to check for it ..
-
 	private void startListener() {
 		serial.addListener(new SerialDataEventListener() {
 			@Override
 			public void dataReceived(SerialDataEvent event) {
 				try {
 					String eventString =  event.getAsciiString();
-					logger.info("eventString: " + eventString);
-
+	
 					if ("Ready".equalsIgnoreCase(eventString.trim())) {
 						arduinoReady = true;
 						logger.info("!! Arduino READY !!");
@@ -119,7 +116,7 @@ public class ArduinoHandler {
 						
 						List<CleanedEvent> ev = ardSerialEvent.getOutputs();
 						
-						logger.debug("Returned event -------------------> " + ev);
+						logger.debug("eventString: " + eventString + " Returned event -------------------> " + ev);
 						
 						for(CleanedEvent cl : ev) {
 							if (cl.getCommand().equalsIgnoreCase(Command.GET_RPM_CMD)) {
@@ -130,16 +127,7 @@ public class ArduinoHandler {
 								allSensorQueue.offer(cl.getData(), 4000, TimeUnit.MILLISECONDS);
 							}
 						}
-
-//						if (ardSerialEvent.isCommandComplete()) {
-//							if (ardSerialEvent.isCommand(Command.GET_RPM_CMD)) {
-//								rpmQueue.offer( Integer.parseInt( ardSerialEvent.getOutput() ), 4000, TimeUnit.MILLISECONDS);
-//							}else if (ardSerialEvent.isCommand(Command.TEMPERATURE_CMD)) {
-//								encTemp.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS) ;
-//							}else if(ardSerialEvent.isCommand(Command.ALL_SESNORS))  {
-//								allSensorQueue.offer(ardSerialEvent.getOutput(), 4000, TimeUnit.MILLISECONDS);
-//							}
-//						}				
+		
 					}
 
 				} catch (Exception e) {
