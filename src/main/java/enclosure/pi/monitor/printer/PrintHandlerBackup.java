@@ -164,7 +164,7 @@ public class PrintHandlerBackup {
 
 					monitor = new Object();
 					printData = new PrintServiceData();
-					printData.setPrintFile(file);
+//					printData.setPrintFile(file);
 					printData.setPrinting(true);
 
 					printingThread = new Thread(new Runnable() {

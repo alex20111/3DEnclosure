@@ -1,12 +1,9 @@
-import { Message } from './../_model/Message';
-import { FileService, GcodeFileList } from './../services/file.service';
+import { GcodeFile } from './../services/file.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
-import { SessionService } from './../services/session.service';
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { NgbTimeStruct } from '@ng-bootstrap/ng-bootstrap';
 import { PrintMessage } from '../_model/PrintMessage';
-import { Constants } from '../_model/Constants';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
@@ -26,7 +23,6 @@ export class PrintingComponent implements OnInit {
   printUiData?: PrintServiceData;
   loading = false;
   stoppingLoading = false;
-  // fileList: GcodeFileList[] = [];
 
   faUpload = faUpload;
 
@@ -43,15 +39,17 @@ export class PrintingComponent implements OnInit {
 
     this.loading = true;
     this.printService.printUiInitInfo().subscribe(data => {
-
-      this.printUiData = data;
-      this.loading = false;
+      console.log("Print data: " , data);
+      this.printUiData = data;      
       this.printForm.setValue({
-        frm_file_to_print: this.printUiData.printFile
+        frm_file_to_print: this.printUiData.listFiles[0].fileName
       });
+
+      this.loading = false;
 
     },
       err => {
+        console.log("errororo: " , err);;
         this.error = err.Message + ' ' + err.error;
         this.loading = false;
       });
@@ -59,7 +57,14 @@ export class PrintingComponent implements OnInit {
 
   start() {
 
-    const fileToPrint = this.printForm.value.frm_file_to_print;
+  const selectedFileName = this.printForm.value.frm_file_to_print;
+  const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
+
+    // const fileToPrint: GcodeFile = {
+    //   fileName: this.printForm.value.frm_file_to_print,
+    //   fileFromPi: true,
+    //   fileFromSd: true
+    // };
 
     if (fileToPrint) {
 

@@ -1,4 +1,4 @@
-import { GcodeFileList } from './file.service';
+import { GcodeFile } from './file.service';
 import { PrintMessage } from 'src/app/_model/PrintMessage';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -17,17 +17,15 @@ export class PrintService {
   constructor(private http: HttpClient) { }
 
 
-  startPrinting(fileNamePrint: string): Observable<Message>{
+  startPrinting(file: GcodeFile): Observable<Message>{
     let print = new PrintServiceData();
-    print.printFile = fileNamePrint;     
+    print.printFile = file;     
 
     return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/start`, print);
   }
 
   stopPrinting(): Observable<Message>{
-    let print = new PrintServiceData();
-    // print.endDate = new Date();
-   
+    let print = new PrintServiceData();   
 
     return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/stop`, print);
   }
@@ -50,8 +48,8 @@ export class PrintService {
 }
 
 export class PrintServiceData{
-  printFile: string;
-  listFiles?: GcodeFileList[] = [];
+  printFile: GcodeFile;
+  listFiles?: GcodeFile[] = [];
   printing: boolean = false;
 
 	//time/date display

@@ -19,12 +19,14 @@ export class FileService {
     });
   }
 
-  fileList(): Observable<GcodeFileList[]>{
-    return this.http.get<GcodeFileList[]>(`http://${Constants.HOST_ADDRESS}:8080/web/file/gcodeList`);
+  fileList(): Observable<GcodeFile[]>{
+    return this.http.get<GcodeFile[]>(`http://${Constants.HOST_ADDRESS}:8080/web/file/gcodeList`);
   }
 }
 
-export interface GcodeFileList{
+export interface GcodeFile{
   fileName: string;
   fileSize?: string;
+  fileFromPi: boolean;
+  fileFromSd: boolean;
 }

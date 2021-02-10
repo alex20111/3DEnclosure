@@ -46,29 +46,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
- 
-
-    // this.printMsg = this.printService.getPrintMessage().subscribe(msg => {
-    //   if (msg != null) {
-    //     if (msg.date != null && msg.started) {
-    //       // console.log("one: ", msg.date);
-    //       this.printMessage = msg.date;
-    //     } else if (msg.finished) {          
-    //       this.printMessage = undefined;
-    //       this.printService.stopPrinting().subscribe(stopped => {
-    //         this.message = "print finished, Fan will stop in 5 min";
-    //       },
-    //       err => {
-    //         this.error = err.error.error;
-    //       })
-    //     }else if (msg.stoped) {
-    //       this.message = "";
-    //       this.printMessage = undefined;
-    //     }
-    //   }
-
-    // });
-
     this.dashBoardTimer = timer(100, 6000).subscribe(val => {
       this.generalService.dashBoard().subscribe(dshboard => {
         this.error = '';
@@ -139,7 +116,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.dashBoardTimer?.unsubscribe();
-    // this.printMsg.unsubscribe();
     this.wsSocket.closeSocket();
     if (this.printerSubs){
       this.printerSubs.unsubscribe();
@@ -169,8 +145,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
            
             let printStartedDate = new Date(data.printStarted);
 
-
-            console.log("Unscbedddd  starting: ", printStartedDate);
             let totPrintTime = this.getTotalTime(data.printTimeSeconds);
               this.printerSubs = interval(1000).subscribe(() => {
                 let totalSeconds = Math.floor(
@@ -200,7 +174,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           }
                 
       }else if (message.dataType === "PRINT_DONE"){
-        console.log("Print thread done!!!", message.message)
         this.printMessage = message.message;
         this.printData = undefined;
         if (this.printerSubs){

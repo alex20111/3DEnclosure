@@ -1,12 +1,12 @@
 package enclosure.pi.monitor.service.model;
 
-import java.time.LocalDateTime;
+
 import java.time.LocalTime;
 import java.util.List;
 
 public class PrintServiceData {
 
-	private String printFile = "";
+	private FileList printFile;
 	private List<FileList> listFiles;
 	private boolean printing = false;
 	
@@ -22,10 +22,10 @@ public class PrintServiceData {
 	
 	public PrintServiceData() {}	
 	
-	public String getPrintFile() {
+	public FileList getPrintFile() {
 		return printFile;
 	}
-	public void setPrintFile(String printFile) {
+	public void setPrintFile(FileList printFile) {
 		this.printFile = printFile;
 	}
 	public List<FileList> getListFiles() {
@@ -108,9 +108,12 @@ public class PrintServiceData {
 	@Override
 	public String toString() {
 		return "PrintServiceData [printFile=" + printFile + ", listFiles=" + listFiles + ", printing=" + printing
-				+ ", printTimeSeconds=" + printTimeSeconds + ", bedTemp=" + bedTemp + ", nozzleTemp=" + nozzleTemp
+				+ ", printTimeSeconds=" + printTimeSeconds + ", printStarted=" + printStarted + ", bedTemp=" + bedTemp
+				+ ", bedTempMax=" + bedTempMax + ", nozzleTemp=" + nozzleTemp + ", nozzleTempMax=" + nozzleTempMax
 				+ ", printerBusy=" + printerBusy + ", lastUpdate=" + lastUpdate + "]";
 	}
+
+
 
 	
 

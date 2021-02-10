@@ -114,7 +114,7 @@ public class FileService {
 
 			 List<FileList> fileList = Stream.of(new File(Constants.GCODE_DIR).listFiles())
 				      .filter(file -> !file.isDirectory())
-				      .map(file -> new FileList(file.getName(), file.length()))
+				      .map(file -> new FileList(file.getName(), file.length(), true, false))
 				      .collect(Collectors.toList());
 			 logger.debug("File list: " + fileList);
 			 

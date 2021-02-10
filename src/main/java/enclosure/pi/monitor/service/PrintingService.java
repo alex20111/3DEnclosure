@@ -38,28 +38,36 @@ public class PrintingService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getPrintUiInfo() {
 		logger.debug("getPrintUiInfo ");		
-		
-		PrinterHandler ph = PrinterHandler.getInstance();		
-		
+
 		PrintServiceData psd = new PrintServiceData();
-		
-		psd.setPrinting(ph.isPrinting());
-		if (psd.isPrinting()) {
-			psd.setPrintFile(ph.getPrintData().getPrintFile());
+		try {
+			PrinterHandler ph = PrinterHandler.getInstance();		
+
+
+
+			psd.setPrinting(ph.isPrinting());
+			if (psd.isPrinting()) {
+				psd.setPrintFile(ph.getPrintData().getPrintFile());
+			}
+			List<FileList> fileList = Stream.of(new File(Constants.GCODE_DIR).listFiles())
+					.filter(file -> !file.isDirectory())
+					.map(file -> new FileList(file.getName(), file.length(), true, false))
+					.collect(Collectors.toList());
+
+			//get files from SD card.
+			List<String> sDfileName = ph.getSdCardFileList();
+			fileList.addAll(sDfileName.stream().map(sdFile -> new FileList(sdFile, 0, false, true)).collect(Collectors.toList()));		
+
+			psd.setListFiles(fileList);
+			logger.debug("Init printer UI info: " + psd);
+		}catch (Exception ex) {
+			logger.error("Erro init printier info" , ex);
 		}
-		 List<FileList> fileList = Stream.of(new File(Constants.GCODE_DIR).listFiles())
-			      .filter(file -> !file.isDirectory())
-			      .map(file -> new FileList(file.getName(), file.length()))
-			      .collect(Collectors.toList());
-		 
-		 
-		 //TODO also list files from SD CARD.. we will be able to print from them..
-		 psd.setListFiles(fileList);
-		  
+
 		return Response.ok().entity(psd).build();
 	}
-	
-	
+
+
 	@Path("start")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -67,30 +75,38 @@ public class PrintingService {
 	public Response startPrinting(PrintServiceData printData) {
 
 		logger.debug("Start printing. info: " + printData );
-		
+
 		Message msg = new Message(MessageType.ERROR,"Printing error");
 		Status status = Status.FORBIDDEN;
-		
-		
+
+
 		if (printData.getPrintFile() != null) {
 			status = Status.OK;
 			PrinterHandler ph = PrinterHandler.getInstance();
 			if (!ph.isPrinting()) {
 				logger.debug("Starting printing file: " + printData.getPrintFile());
-				
+
+
 				try {
-					ph.sendGcodeFileToPrinter(printData.getPrintFile());
+					FileList fileToPrint = printData.getPrintFile();
+					if (fileToPrint.isFileFromSd()) {
+						ph.startPrintFromSD(fileToPrint);
+
+					}else if (fileToPrint.isFileFromPi()) {
+
+						ph.sendGcodeFileToPrinter(printData.getPrintFile());
+					}
 					msg = new Message(MessageType.SUCCESS, "Printing started");
 				} catch (FileNotFoundException e) {
 					msg = new Message(MessageType.WARN, "File " + printData.getPrintFile() + " not found");
 				}catch (IllegalAccessError ae) {
 					msg = new Message(MessageType.WARN, "Printer not connected");
 				}
-				
+
 			}else {				
 				msg = new Message(MessageType.WARN, "Printer is already printing");
 			}
-			
+
 		}		
 
 		return Response.status(status).entity(msg).build();
@@ -104,14 +120,14 @@ public class PrintingService {
 		logger.debug("stop printing. " + printingData);
 		Message msg = null;
 		try {
-			
+
 			PrinterHandler ph = PrinterHandler.getInstance();
 			if (ph.isPrinting()) {
 				ph.stopPrinting();
 				msg = new Message(MessageType.SUCCESS, "Print stopped, Stopping fan function in 5 min");
 			}
-			
-			
+
+
 		}catch (Exception e) {
 			logger.error("error stopping thread" , e);
 			msg = new Message(MessageType.WARN,"Error stopping printing. " + e.getMessage());
