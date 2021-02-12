@@ -6,7 +6,7 @@ public class FileList {
 	private boolean fileFromPi = false;
 	private boolean fileFromSd = false;
 	
-	
+	public FileList() {}
 	public FileList(String name, long size, boolean fromPi, boolean fromSd) {
 		this.fileName = name;
 		this.fileSize = String.valueOf(size);

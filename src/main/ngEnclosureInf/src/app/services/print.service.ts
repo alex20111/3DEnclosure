@@ -19,7 +19,9 @@ export class PrintService {
 
   startPrinting(file: GcodeFile): Observable<Message>{
     let print = new PrintServiceData();
-    print.printFile = file;     
+    print.printFile = file;    
+    
+    console.log("Sending:  " , print);
 
     return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/start`, print);
   }
@@ -60,6 +62,7 @@ export class PrintServiceData{
 	 nozzleTemp: number = -1.0;
 	 nozzleTempMax: number = -1.0;	
 	 printerBusy: boolean = false;	
+   percentComplete: number = -1;
 	 lastUpdate: Date = null;
 
 }

@@ -35,7 +35,7 @@
       <br />
       <hr style="border-color: white" />
       <div class="mt-2">
-        <Button [disabled]="printUiData?.printing || stoppingLoading" class="btn btn-success mr-1" (click)="start()">Start</Button>
+        <Button [disabled]="loading || printUiData?.printing || stoppingLoading" class="btn btn-success mr-1" (click)="start()">Start</Button>
         <button [disabled]="!printUiData?.printing || stoppingLoading" class="btn btn-danger mr-1" (click)="stop()">
           <span  *ngIf="stoppingLoading" class="spinner-border spinner-border-sm mr-1"></span> Stop</button>
         <button [disabled]="stoppingLoading"class="btn btn-primary " routerLink="/"> Back </button>

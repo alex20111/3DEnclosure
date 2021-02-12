@@ -24,10 +24,10 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   error: string = '';
   message: string = '';
   printMessage: string;
-  printData: PrintServiceData;
+  printData: PrintServiceData = new PrintServiceData();
 
   dashBoardTimer: Subscription | undefined;
-  printerSubs: Subscription;
+  printerSubscription: Subscription;
 
   //icons
   faThermometerHalf = faThermometerHalf;
@@ -41,8 +41,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private generalService: GeneralService, private lightService: LightService, private printService: PrintService,
-      private wsSocket: PiWebSocketService) { }
-
+    private wsSocket: PiWebSocketService) { }
 
   ngOnInit(): void {
 
@@ -63,22 +62,19 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         });
     });
     this.wsSocket.connect().subscribe(wsReturn => {
-      console.log("WebSocket result" , wsReturn);
-    
-        this.webSocketData(wsReturn);
-    },
-    err => {
-      console.log("Web Socket error!!!" , err);
-    });
+      // console.log("WebSocket result", wsReturn);
 
+      this.webSocketData(wsReturn);
+    },
+      err => {
+        console.log("Web Socket error!!!", err);
+      });
 
     //request new print data
     const socketMessage = new SocketMessage();
     socketMessage.action = "REQUEST_DATA";  //request  
     socketMessage.dataType = "PRINT_DATA";  //request print data if any
     this.wsSocket.sendMessage(socketMessage);
-
- 
   }
 
   light() {
@@ -110,15 +106,13 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.lightLoading = false;
       }
     );
-
-
   }
 
   ngOnDestroy(): void {
     this.dashBoardTimer?.unsubscribe();
     this.wsSocket.closeSocket();
-    if (this.printerSubs){
-      this.printerSubs.unsubscribe();
+    if (this.printerSubscription) {
+      this.printerSubscription.unsubscribe();
     }
   }
 
@@ -136,51 +130,56 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       });
   }
   //handle websocket data
-  webSocketData(message: SocketMessage){ 
-      if (message.dataType === "PRINT_DATA" || message.dataType === "PRINT_TOTAL_TIME"){
-        let data: PrintServiceData = JSON.parse(message.message);
-        this.printData = data;
-        if (data.printing){
-          if (!this.printerSubs){ //timer to display print time            
-           
-            let printStartedDate = new Date(data.printStarted);
+  webSocketData(message: SocketMessage) {
+    if (message.dataType === "PRINT_DATA" 
+          || message.dataType === "PRINT_TOTAL_TIME"
+          || message.dataType === "PRINT_DONE") {
+      let data: PrintServiceData = JSON.parse(message.message);
+      this.printData = data;
+      if (data.printing) {
+        if (!this.printerSubscription) { //timer to display print time            
 
-            let totPrintTime = this.getTotalTime(data.printTimeSeconds);
-              this.printerSubs = interval(1000).subscribe(() => {
-                let totalSeconds = Math.floor(
-                  (new Date().getTime() - printStartedDate.getTime()  ) / 1000
-                );
+          let printStartedDate = new Date(data.printStarted);
 
-                let hours = 0;
-                let minutes = 0;
-                let seconds = 0;
-            
-                if (totalSeconds >= 3600) {
-                  hours = Math.floor(totalSeconds / 3600);
-                  totalSeconds -= 3600 * hours;
-                }
-            
-                if (totalSeconds >= 60) {
-                  minutes = Math.floor(totalSeconds / 60);
-                  totalSeconds -= 60 * minutes;
-                }            
-                seconds = totalSeconds;
+          let totPrintTime = undefined;
+          if (data.printTimeSeconds > 0) {
+            totPrintTime = this.getTotalTime(data.printTimeSeconds);
+          }
+          this.printerSubscription = interval(1000).subscribe(() => {
+            let totalSeconds = Math.floor(
+              (new Date().getTime() - printStartedDate.getTime()) / 1000
+            );
 
-                this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
-                // console.log("Hours: min sec: ", hours, minutes, seconds );
-              });
+            let hours = 0;
+            let minutes = 0;
+            let seconds = 0;
+
+            if (totalSeconds >= 3600) {
+              hours = Math.floor(totalSeconds / 3600);
+              totalSeconds -= 3600 * hours;
             }
 
-          }
-                
-      }else if (message.dataType === "PRINT_DONE"){
+            if (totalSeconds >= 60) {
+              minutes = Math.floor(totalSeconds / 60);
+              totalSeconds -= 60 * minutes;
+            }
+            seconds = totalSeconds;
+
+            if (totPrintTime){ //if we got a time to complete in seconds
+             this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
+            }else{
+              this.printMessage = `${hours} h ${minutes} m ${seconds} s` ;
+            }
+          });
+        }
+      }else if (message.dataType === "PRINT_DONE") {
         this.printMessage = message.message;
         this.printData = undefined;
-        if (this.printerSubs){
-          this.printerSubs.unsubscribe();
+        if (this.printerSubscription) {
+          this.printerSubscription.unsubscribe();
         }
       }
-
+    } 
   }
 
   private getTotalTime(sec: number): string {
@@ -196,7 +195,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     if (sec >= 60) {
       minutes = Math.floor(sec / 60);
       sec -= 60 * minutes;
-    }            
+    }
     seconds = sec;
 
     return `${hours} h ${minutes} m ${seconds} s`;

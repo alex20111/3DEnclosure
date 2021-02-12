@@ -32,15 +32,15 @@ export class PrintingComponent implements OnInit {
 
   ngOnInit(): void {
 
-      //build form
-      this.printForm = this.formBuilder.group({
-        frm_file_to_print: ['']
-      });
+    //build form
+    this.printForm = this.formBuilder.group({
+      frm_file_to_print: ['']
+    });
 
     this.loading = true;
     this.printService.printUiInitInfo().subscribe(data => {
-      console.log("Print data: " , data);
-      this.printUiData = data;      
+      console.log("Print data: ", data);
+      this.printUiData = data;
       this.printForm.setValue({
         frm_file_to_print: this.printUiData.listFiles[0].fileName
       });
@@ -49,7 +49,7 @@ export class PrintingComponent implements OnInit {
 
     },
       err => {
-        console.log("errororo: " , err);;
+        console.log("errororo: ", err);;
         this.error = err.Message + ' ' + err.error;
         this.loading = false;
       });
@@ -57,31 +57,42 @@ export class PrintingComponent implements OnInit {
 
   start() {
 
-  const selectedFileName = this.printForm.value.frm_file_to_print;
-  const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
+    if (this.printUiData) {
 
-    // const fileToPrint: GcodeFile = {
-    //   fileName: this.printForm.value.frm_file_to_print,
-    //   fileFromPi: true,
-    //   fileFromSd: true
-    // };
+      const selectedFileName = this.printForm.value.frm_file_to_print;
+      const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
 
-    if (fileToPrint) {
+      // const newF = new GcodeFile();
+      // newF.fileFromPi = fileToPrint.fileFromPi;
+      // newF.fileFromSd = fileToPrint.fileFromSd;
+      // newF.fileName = fileToPrint.fileName;
+      // newF.fileSize = fileToPrint.fileSize;
 
-      this.printService.startPrinting(fileToPrint).subscribe(result => {
-        console.log("Start print result message: " , result)
-        if (result.messageType !== "SUCCESS"){
-          this.error = result.message;
-        }else{
-          this.printUiData.printing = true;
-          this.router.navigate(['/']);
-        }
-      },
-      err => {
-        this.error = err.message + ' ' + err.error;
-      })
-    } else {
-      this.error = "Please select a file to print";
+      // console.log("file to print: " , newF);
+      // const fileToPrint: GcodeFile = {
+      //   fileName: this.printForm.value.frm_file_to_print,
+      //   fileFromPi: true,
+      //   fileFromSd: true
+      // };
+
+      if (fileToPrint) {
+
+        this.printService.startPrinting(fileToPrint).subscribe(result => {
+          console.log("Start print result message: ", result)
+          if (result.messageType !== "SUCCESS") {
+            this.error = result.message;
+          } else {
+            this.printUiData.printing = true;
+            this.router.navigate(['/']);
+          }
+        },
+          err => {
+            console.log(err);
+            this.error = err.message + ' ' + err.error;
+          })
+      } else {
+        this.error = "Please select a file to print";
+      }
     }
 
   }

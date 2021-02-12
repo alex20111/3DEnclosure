@@ -22,6 +22,20 @@ public class TestSubs {
 		
 		
 		System.out.println(LocalDateTime.now().toString());
+		
+		String newString = "SD printing byte 29868/231283";
+		
+		String subStr = newString.substring(newString.indexOf("byte") + 4, newString.length()).trim();
+		String bytesRemaining[] = subStr.split("/");
+		
+		
+		
+		double completed = Double.parseDouble(bytesRemaining[0]);
+		double total = Double.parseDouble(bytesRemaining[1]);
+		double percentDbl = (completed / total) * 100;
+		int percent = (int)percentDbl;
+		
+		System.out.println("SubStr: " + subStr +  " compled: " + completed + " total: " + total + " Percent: " + percent);
 	
 
 	}

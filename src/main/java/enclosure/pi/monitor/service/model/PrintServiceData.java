@@ -18,6 +18,7 @@ public class PrintServiceData {
 	private float nozzleTemp = -1.0f;
 	private float nozzleTempMax = -1.0f;	
 	private boolean printerBusy = false;	
+	private int percentComplete = -1;
 	private LocalTime lastUpdate;
 	
 	public PrintServiceData() {}	
@@ -103,6 +104,14 @@ public class PrintServiceData {
 
 	public void setPrintStarted(String printStarted) {
 		this.printStarted = printStarted;
+	}
+
+	public int getPercentComplete() {
+		return percentComplete;
+	}
+
+	public void setPercentComplete(int percentComplete) {
+		this.percentComplete = percentComplete;
 	}
 
 	@Override

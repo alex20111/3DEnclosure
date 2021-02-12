@@ -54,10 +54,11 @@ public class PrintingService {
 					.map(file -> new FileList(file.getName(), file.length(), true, false))
 					.collect(Collectors.toList());
 
-			//get files from SD card.
-			List<String> sDfileName = ph.getSdCardFileList();
-			fileList.addAll(sDfileName.stream().map(sdFile -> new FileList(sdFile, 0, false, true)).collect(Collectors.toList()));		
-
+			if (!psd.isPrinting()) {
+				//get files from SD card.
+				List<String> sDfileName = ph.getSdCardFileList();
+				fileList.addAll(sDfileName.stream().map(sdFile -> new FileList(sdFile, 0, false, true)).collect(Collectors.toList()));		
+			}
 			psd.setListFiles(fileList);
 			logger.debug("Init printer UI info: " + psd);
 		}catch (Exception ex) {

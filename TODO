@@ -5,21 +5,8 @@ the pom.xml <argument>--base-href=/</argument> to be root OR <argument>--base-hr
 https://stackoverflow.com/questions/38532210/how-to-integrate-angular-2-java-maven-web-application
 
 
-What needs to be done!!!!!!!!!:
-	then test start/stop 1st  - Done
-	test print happy flow .  
-
-
-
 TODO:
 
-//TODO File Upload screen - new screen   !!DONE!!
-	//On the angular print screen a new upload button that will take you to the file upload screen. !!DONE!!
-	//add checkbox to specify if want to print right away. !!DONE!!
-		//the checkbox will only be aivailaible if the printer is connected.
-	//button to submit upload. !!DONE!!
---> java new file upload service.	 !!DONE!!
-	
 //TODO new angular screen where all the gcode are (gcode file handler)  - new Screen ( to del)  -- could be done on the file upload screen
 
 //TODO print screen
@@ -27,14 +14,6 @@ TODO:
 	//handle stop command !!DONE!!
 	//add new component that verify if printer is active .. through websocket!!!!!!!!??
  
-	
-//TODO main screen DASH board 		
-	//push pre-heat sequence to angular as well as time.!!DONE!!
-	//when you click on print from the print screen, the dashboard banner will 1st display temp of nozzle and temp of bed heating up. !!DONE!!
-	//after the time estimated will be displayed.  !!DONE!!
-	//if any errors, it will be displayed there also..
---> java web socket that will push that information.
-
 printer handle errors (Rteurn to start and end).
 install new LEDs in the enclosure.
 when stopping a print , the underling thread is not cancelled and the print SMS is sent.
@@ -49,3 +28,16 @@ new arduino code to handle multiple serial returns.. <ss> <sda>
 Update arduino code to control new fan
 Connect printer to raspberry pi. Create usb cable.
 Print new Inline fan and install.
+//TODO File Upload screen - new screen   !!DONE!!
+	//On the angular print screen a new upload button that will take you to the file upload screen. !!DONE!!
+	//add checkbox to specify if want to print right away. !!DONE!!
+		//the checkbox will only be aivailaible if the printer is connected. SHEVLED
+	//button to submit upload. !!DONE!!
+--> java new file upload service.	 !!DONE!!
+//TODO main screen DASH board 		
+	//push pre-heat sequence to angular as well as time.!!DONE!!
+	//when you click on print from the print screen, the dashboard banner will 1st display temp of nozzle and temp of bed heating up. !!DONE!!
+	//after the time estimated will be displayed.  !!DONE!!
+	//if any errors, it will be displayed there also..
+--> java web socket that will push that information.
+	

@@ -39,6 +39,7 @@ public class PrinterHandler {
 
 	private static PrinterHandler printerHandler;
 
+	private Object monitor = new Object();
 	private SerialPort comPort;
 	private InputStream in;
 
@@ -48,10 +49,13 @@ public class PrinterHandler {
 	boolean keepingConnectionAlive = true;
 
 	private boolean isConnected = false;
+	private boolean serialConnStarted = false;
+
 	private boolean forceStopped = false;
 	private PrintMode mode = PrintMode.NOT_PRINTING;	
 
 	private Thread printingThread;
+	private Thread printerListeningThread;
 
 	private boolean sdCardReady = false;
 	private List<String> fileList = new ArrayList<>();
@@ -84,7 +88,10 @@ public class PrinterHandler {
 			@Override
 			public void run() {
 
+				LocalDateTime prevSdCardReading = LocalDateTime.now().plusMinutes(2);
+
 				while(keepingConnectionAlive) {
+
 					try {
 						logger.debug("Serial is open: " + (comPort != null ? comPort.isOpen() : "false") );
 
@@ -104,19 +111,33 @@ public class PrinterHandler {
 								logger.info("Connected to printer");
 								isConnected = true;
 								in = comPort.getInputStream();
+
+								Thread.sleep(6000);
+								startListening();
+								sendCommand("M155 S5", false);//send a command to get the hot end and bed temp every 10 sec 
 							}
 							else {
+								isConnected = false;
+								serialConnStarted = false;
 								logger.info("Could not connect to printer , retrying in 10 sec. " );
 							}
 
 						}else if (comPort != null && comPort.isOpen() && !mode.isPrinting()) {
 							verifyPrinterConnected();
+						}else if (comPort != null && comPort.isOpen() && mode == PrintMode.SD_PRINTING ) {
+
+							if (LocalDateTime.now().isAfter(prevSdCardReading)) {
+								prevSdCardReading.plusSeconds(30);
+								//send periodic file status when SD is printing.
+								sendCommand("M27", false); //get file remaining byte to calculare % every 30 sec
+							}
+
 						}
 					}catch(Exception ex) {
 						logger.error("Thread printer: " , ex);
 					}
 					try {
-						Thread.sleep(10000);
+						Thread.sleep(15000);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
@@ -158,7 +179,6 @@ public class PrinterHandler {
 										sendCommand(str, true);
 
 									}else if (str.contains("TIME") && !str.contains("TIME_ELAPSED")) {
-										logger.debug("Send time info: ");
 										try {
 											String timeStr = str.substring(str.indexOf(":") + 1, str.length()).trim();
 											double timeInSec = Double.parseDouble(timeStr);
@@ -218,26 +238,35 @@ public class PrinterHandler {
 		}
 	}
 
-	public void startPrintFromSD(FileList file){
+	public void startPrintFromSD(FileList file) throws IllegalAccessError{
 		if (isConnected) {
 
 			if (!mode.isPrinting()) {
-				mode = PrintMode.SD_PRINTING;
+
 				try {
 					//select file
-					sendCommand("M23 " + file.getFileName(), true);
+					sendCommand("M23 " + file.getFileName(), true); //select file name
 
 					//sent print command
-					sendCommand("M24", true);  //TODO
+					sendCommand("M24", true);  
+					printData.setPrinting(true);
+					printData.setPrintStarted(LocalDateTime.now().toString());
+					printData.setPercentComplete(0);
+
+					SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_TOTAL_TIME, JsonStream.serialize(printData));
+					WebSocketClient.getInstance().sendMessage(msg);
+
+					mode = PrintMode.SD_PRINTING;
 
 				} catch (IOException | InterruptedException e) {
 					logger.error("Error in SD print" , e);
-				}  //start print
+					throw new IllegalAccessError("Error in SD print");
+				} 
 
 			}else {
 				logger.debug("Thread is not null or is printing: " + (mode == PrintMode.PI_PRINTING ? " Pi Printing " : " SD printing") );
+				throw new IllegalAccessError("Printer is printing");
 			}
-			//			createSerialListener();
 		}else {
 			throw new IllegalAccessError("Printer is not connected");
 		}
@@ -249,14 +278,13 @@ public class PrinterHandler {
 		fileList.clear();
 		sdCardReady = false;
 		try {
-			for(int i = 0; i < 10; i++) {
+			for(int i = 0; i < 6; i++) {
 				if (!sdCardReady) {
 					logger.debug("checking if sd card ready");
 					sendCommand("M21", true);  //see if the SD card is ready
 				}
 				else if (sdCardReady) {
 					break;
-
 				}
 			}
 			logger.debug("sd carc ready:  " + sdCardReady);
@@ -273,68 +301,65 @@ public class PrinterHandler {
 		writeOutputs();
 		return fileList;
 	}
-	public boolean isConnected() {
-		return isConnected;
-	}
-	public boolean isPrinting() {
-		return mode.isPrinting();
-	}
 
 	public void stopPrinting() {
 		logger.debug("Stopping printing!!");
 		outputs.append("\n!!! == Stop print == !!!\n");
+		try {
+			if (mode == PrintMode.PI_PRINTING) {
 
-		if (mode == PrintMode.PI_PRINTING) {
-			
-			logger.debug("Stopping PI Printing!!");
-			
-			mode = PrintMode.NOT_PRINTING;
-			if (printingThread != null) {
-				printingThread.interrupt();
-				forceStopped = true;
+				logger.debug("Stopping PI Printing!!");
 
-				try {
-					printingThread.join(3000);
-				} catch (InterruptedException e) {
-					logger.debug("Error ing", e);
-				}
+				mode = PrintMode.NOT_PRINTING;
+				if (printingThread != null) {
+					printingThread.interrupt();
+					forceStopped = true;
 
-				logger.debug("Starting stop printing commands");
-				printData = new PrintServiceData();
-				printingThread = null;
+					try {
+						printingThread.join(3000);
+					} catch (InterruptedException e) {
+						logger.debug("Error ing", e);
+					}
 
-				forceStopped = false; // reset so we can send commands..
+					logger.debug("Starting stop printing commands");
+					printData = new PrintServiceData();
+					printingThread = null;
 
-				List<String> endGcode = new ArrayList<>();
-				endGcode.add("M108");
-				endGcode.add("M140 S0");
-				endGcode.add("M107");
-				endGcode.add("G91 ;Relative positionning");
-				endGcode.add("G1 E-2 F2700 ;Retract a bit");
-				endGcode.add("G1 E-2 Z0.2 F2400 ;Retract and raise Z");
-				endGcode.add("G1 X5 Y5 F3000 ;Wipe out");
-				endGcode.add("G1 Z10 ;Raise Z more");
-				endGcode.add("G90 ;Absolute positionning");
-				endGcode.add("M106 S0 ;Turn-off fan");
-				endGcode.add("M104 S0 ;Turn-off hotend");
-				endGcode.add("M140 S0 ;Turn-off bed");
-				endGcode.add("M84 X Y E ;Disable all steppers but Z");
-				endGcode.add("M82 ;absolute extrusion mode");
-				endGcode.add("M104 S0");
+					forceStopped = false; // reset so we can send commands..
 
-				try {
+					List<String> endGcode = new ArrayList<>();
+					endGcode.add("M108");
+					endGcode.add("M140 S0");
+					endGcode.add("M107");
+					endGcode.add("G91 ;Relative positionning");
+					endGcode.add("G1 E-2 F2700 ;Retract a bit");
+					endGcode.add("G1 E-2 Z0.2 F2400 ;Retract and raise Z");
+					endGcode.add("G1 X5 Y5 F3000 ;Wipe out");
+					endGcode.add("G1 Z10 ;Raise Z more");
+					endGcode.add("G90 ;Absolute positionning");
+					endGcode.add("M106 S0 ;Turn-off fan");
+					endGcode.add("M104 S0 ;Turn-off hotend");
+					endGcode.add("M140 S0 ;Turn-off bed");
+					endGcode.add("M84 X Y E ;Disable all steppers but Z");
+					endGcode.add("M82 ;absolute extrusion mode");
+					endGcode.add("M104 S0");
+
 					for (String str : endGcode) {
 						sendCommand(str, true);
 					}
+
 					mode = PrintMode.NOT_PRINTING; 
-				}catch(Exception ex) {
-					logger.error("Error in stopping printer", ex);
 				}
+			}else if (mode == PrintMode.SD_PRINTING) {
+				logger.debug("Stopping SD Printing!!");
+				printData = new PrintServiceData();
+				//do stop code here
+				mode = PrintMode.NOT_PRINTING; //TODO  stop initiated.. bed and nozzle still heating.. will stop after..
+
+				sendCommand("M524", false);  // this is the SD stop
 			}
-		}else if (mode == PrintMode.SD_PRINTING) {
-			logger.debug("Stopping SD Printing!!");
-			//do stop code here
-			mode = PrintMode.NOT_PRINTING; //TODO  stop initiated.. bed and nozzle still heating.. will stop after..
+		}catch(InterruptedException | IOException ex) {
+			logger.error("Error in stopping printer", ex);
 		}
 		outputs.append("!!! == Stop print END  == !!!\n");
 		writeOutputs();
@@ -343,6 +368,22 @@ public class PrinterHandler {
 	public PrintServiceData getPrintData() {
 		return this.printData;
 	}
+	public boolean isConnected() {
+		return isConnected;
+	}
+	public boolean isPrinting() {
+		return mode.isPrinting();
+	}
+
+	public void emergencyStop() {
+		logger.info("Sending emergency stop ");
+		try {
+			sendCommand("M112", false);
+		} catch (IOException | InterruptedException e) {
+			logger.error("error emergencyStop" , e);
+		}
+	}
+
 
 	private void sendCommand(String command, boolean wait) throws IOException, InterruptedException {
 		outputs.append("Writing: " + command + "\n");
@@ -350,40 +391,9 @@ public class PrinterHandler {
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
 
-
 		if (wait) {
-			boolean okFound = false;
-
-			while(!okFound) {
-				if (comPort.bytesAvailable() > -1) {
-					try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
-						boolean readingFileList = false;
-						String line;
-						while( (line = br.readLine() ) != null && !forceStopped) {
-							outputs.append("Response: " + line + "\n");
-							logger.debug("response: " + line);
-
-							if (line.startsWith("ok")) {
-								okFound = true;
-								break;
-							}else if (line.contains("T:") && line.contains("B:")) {
-								sendTempData(line);
-							}else if(line.contains("SD card ok")) {
-								sdCardReady = true;
-							}else if(line.contains("Begin file list")) {
-								readingFileList = true;
-							}else if (line.contains("End file list")) {
-								readingFileList = false;							
-							}else if (readingFileList) {
-								fileList.add(line.split(" ")[0]);
-							}
-						}
-
-						if (forceStopped) {
-							throw new InterruptedException("Forced stopped command");
-						}
-					}
-				}
+			synchronized (monitor) {
+				monitor.wait(20000);
 			}
 		}
 	}
@@ -391,35 +401,25 @@ public class PrinterHandler {
 		String s2cmd = "M31\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
-		boolean okFound = false;
 		boolean answer = false;
 
 		LocalDateTime breakNowFuture = LocalDateTime.now().plusSeconds(5);	
 
-		while(!okFound) {
-			if (comPort.bytesAvailable() > -1) {
-				try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
-
-					String line;
-					while( (line = br.readLine() ) != null) {
-
-						if (line.contains("ok")) {
-							okFound = true;
-							answer = true;
-							break;						
-						}
-					}
-				}catch(IOException e) {
-					logger.error("Error in verifying if printer exist: " , e);
-				}
+		try {
+			synchronized (monitor) {
+				monitor.wait(2000);
 			}
 
 			if(LocalDateTime.now().isAfter(breakNowFuture)) {
 				logger.debug("No printer connteted");
 				isConnected = false;
 				answer = false;
-				break;
+				//			break;
 			}
+		}catch(InterruptedException ie) {
+			logger.info("verifyPrinterConnected was interrupted", ie );
+			isConnected = false;
+			answer = false;
 		}
 		return answer;
 	}
@@ -445,74 +445,121 @@ public class PrinterHandler {
 		}
 	}
 
+	private void sendPercentCompleted(String line) {
+		logger.debug("sendPercentCompleted: " + line);
+		try {
+			String subStr = line.substring(line.indexOf("byte") + 4, line.length()).trim();
+			String bytesRemaining[] = subStr.split("/");		
+
+			double completed = Double.parseDouble(bytesRemaining[0]);
+			double total = Double.parseDouble(bytesRemaining[1]);
+			double percentDbl = (completed / total) * 100;
+			int percent = (int)percentDbl;
+
+			printData.setPercentComplete(percent);
+			SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
+			WebSocketClient.getInstance().sendMessage(msg);
+		}catch(Exception e) {
+			logger.info("Problem with percentage conversion" , e);
+		}
+	}
+
 	private void writeOutputs() {
 		try {
 			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 			outputs = new StringBuilder();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	//	private  void createSerialListener() {
-	//
-	//		listener = new SerialPortDataListener() {
-	//
-	//			//		comPort.addDataListener(new SerialPortDataListener() {
-	//
-	//			@Override
-	//			public int getListeningEvents() { return SerialPort.LISTENING_EVENT_DATA_AVAILABLE; }
-	//
-	//			@Override
-	//			public void serialEvent(SerialPortEvent event)
-	//			{
-	//				if (event.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE)
-	//					return;
-	//
-	//				boolean okFound = false;
-	//				while(!okFound ) {			
-	//					if (comPort.bytesAvailable() > -1) {
-	//
-	//						
-	//						try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
-	//							boolean readingFileList = false;
-	//							String line;
-	//							while( (line = br.readLine() ) != null ) {
-	////								System.out.println("Line out: " + line);
-	//								outputs.append("\nRecieved: " + line);
-	//								if (line.startsWith("ok")) {
-	//									synchronized (monitor) {
-	//										monitor.notifyAll();
-	//
-	//									}
-	//									break;
-	//								}else if(line.contains("SD card ok")) {
-	//									sdCardReady = true;
-	//								}else if(line.contains("Begin file list")) {
-	//									readingFileList = true;
-	//								}else if (line.contains("End file list")) {
-	//									readingFileList = false;							
-	//								}else if (readingFileList) {
-	//									fileList.add(line.split(" ")[0]);
-	//								}
-	//								if (interrupt) {
-	//									System.out.println("break");
-	//									okFound = true;
-	//									break;
-	//								}
-	//							
-	//							}
-	//						}catch(IOException ex) {
-	//							ex.printStackTrace();
-	//						}
-	//					}
-	//	
-	//				} 
-	//
-	//			}
-	//		};
-	//
-	//		comPort.addDataListener(listener);
-	//	}
+	/**
+	 * Thread that listen to com events.
+	 */
+	private void startListening() {
+
+		if (printerListeningThread == null) {
+			logger.debug("Starting thread");
+
+			printerListeningThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					while(true) {
+						try {
+							if (comPort.bytesAvailable() > -1) {
+								try(BufferedReader br=new BufferedReader(new InputStreamReader(in,	StandardCharsets.UTF_8))){
+									boolean readingFileList = false;
+									String line;
+									while( (line = br.readLine() ) != null) {
+										outputs.append("Response: " + line + "\n");
+
+										if (line.startsWith("ok") &&  !line.contains("T:") && !line.contains("B:") ) {
+											synchronized (monitor) {
+												monitor.notifyAll();
+											}
+										}else if (line.contains("T:") && line.contains("B:")) {
+											sendTempData(line);
+										}else if(line.contains("SD card ok")) {
+											sdCardReady = true;
+										}else if(line.contains("Begin file list")) {
+											readingFileList = true;
+										}else if (line.contains("End file list")) {
+											readingFileList = false;							
+										}else if (readingFileList) {
+											fileList.add(line.split(" ")[0]);
+										}else if(line.contains("Print time:")) {
+											serialConnStarted = true;
+										}else if (line.contains("SD printing byte")) { //M27
+											sendPercentCompleted(line);
+										}else if (line.contains("Done printing file") && mode == PrintMode.SD_PRINTING) {
+											finalizeSdPrinting();
+										}
+									}
+								}
+							}
+						}catch(IOException e) {
+							logger.error("Error in listening thread" , e);
+							break;
+						}
+					}
+					logger.debug("printer listening thread ended");
+					printerListeningThread = null;
+				}
+
+			});
+
+			printerListeningThread.start();
+			try {
+				Thread.sleep(100);
+
+				//wait until got good data
+				for(int i=0 ; i < 5 ; i ++) {
+					sendCommand("M31", true);
+					if (serialConnStarted) {
+						break;
+					}
+					Thread.sleep(500);
+				}
+			} catch (InterruptedException e) {	} catch (IOException e) {}
+		}else {
+			logger.debug("printer listening thread already started");
+		}
+		logger.debug("listenet started");
+	}
+	private void finalizeSdPrinting() {
+		logger.debug("Finishing SD printing");
+		mode = PrintMode.NOT_PRINTING;
+		printData.setPercentComplete(100);
+		printData.setPrinting(false);
+		printData.setPrintStarted(null);
+		printData.setPrinterBusy(false);
+
+		SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DONE, "Printing done!!" );
+		WebSocketClient.getInstance().sendMessage(msg);
+		
+		//send SMS message
+		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
+		writeOutputs();
+	}
 }

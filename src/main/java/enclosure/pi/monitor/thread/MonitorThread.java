@@ -176,7 +176,7 @@ public class MonitorThread implements Runnable{
 				smokeLevel = SmokeLevel.WARNING;
 				//then wait 45 seconds before escalating if there is still smoke.
 				logger.info("sent SMOKE warning alarm");
-				nextFireAlarmToBeSent =  LocalDateTime.now().plusSeconds(45);
+				nextFireAlarmToBeSent =  LocalDateTime.now().plusSeconds(60);
 				sendSMS("!!!!WARNING!!! ", "Smoke detected.\nCO2: " + co2 + "\nVOC: " + vocPPM + "\nMq2: " + smokeSensor);
 			}else if (smokeLevel == SmokeLevel.WARNING) {
 				//check if the 30 seconds is up.. if it's up, then send severe warning
@@ -189,6 +189,8 @@ public class MonitorThread implements Runnable{
 					//stop fan
 					ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 					fan.setFanSpeed(0);
+					
+					PrinterHandler.getInstance().emergencyStop();
 				}
 			}else if (smokeLevel == SmokeLevel.ALARM) {
 				LocalDateTime now = LocalDateTime.now();
