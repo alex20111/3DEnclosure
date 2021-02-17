@@ -18,6 +18,7 @@ printer handle errors (Rteurn to start and end).
 install new LEDs in the enclosure.
 when stopping a print , the underling thread is not cancelled and the print SMS is sent.
 
+monitor printer position to see if it's mooving or if it's responding to avoid stall and crash that lets the printer working but not working.
 
 Test:
 Test smoke alarm system.

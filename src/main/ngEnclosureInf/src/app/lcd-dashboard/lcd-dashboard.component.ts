@@ -138,7 +138,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       this.printData = data;
       if (data.printing) {
         if (!this.printerSubscription) { //timer to display print time            
-
+          console.log("datadatadata: " , data);
           let printStartedDate = new Date(data.printStarted);
 
           let totPrintTime = undefined;
@@ -173,7 +173,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           });
         }
       }else if (message.dataType === "PRINT_DONE") {
-        this.printMessage = message.message;
+        this.printMessage = "Print Completed. ";
         this.printData = undefined;
         if (this.printerSubscription) {
           this.printerSubscription.unsubscribe();

@@ -53,6 +53,7 @@ export class PrintServiceData{
   printFile: GcodeFile;
   listFiles?: GcodeFile[] = [];
   printing: boolean = false;
+  printCompleted: boolean = false;
 
 	//time/date display
    printTimeSeconds: number = -1;
@@ -63,7 +64,6 @@ export class PrintServiceData{
 	 nozzleTempMax: number = -1.0;	
 	 printerBusy: boolean = false;	
    percentComplete: number = -1;
-	 lastUpdate: Date = null;
 
 }
 

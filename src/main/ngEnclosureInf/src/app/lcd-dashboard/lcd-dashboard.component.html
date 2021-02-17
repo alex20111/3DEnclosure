@@ -1,18 +1,6 @@
-<h3 style="color: white;"> Enclosure monitor v1.0
-
-  <div ngbDropdown class="d-inline-block float-right" placement="bottom-right">
-    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>
-      <fa-icon [icon]="faCog"></fa-icon>
-    </button>
-    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
-      <button ngbDropdownItem routerLink="/print">Print</button>
-      <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
-      <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
-      <button ngbDropdownItem routerLink="/config">Config</button>
-      <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
-    </div>
-  </div>
-</h3>
+<!-- <div class="container-fluid">
+  <div class="row">
+    <div class="col-12"> -->
 
 <p *ngIf="error">
   <ngb-alert type="danger" (closed)="error ='' ">
@@ -24,31 +12,45 @@
     <div [innerHTML]="message"></div>
   </ngb-alert>
 </p>
-<p *ngIf="printMessage">
-  <ngb-alert type="info" [dismissible]="false">
-    <!-- <app-countdown [timerStartDate] = "printMessage"></app-countdown> -->
-    {{printMessage}} <span *ngIf="printData.percentComplete > -1">/ {{printData.percentComplete}} %</span><br />
-    <!-- <div *ngIf="printData">
-    Nozzle: {{printData.nozzleTemp}} / {{printData.nozzleTempMax}}  Bed: {{printData.bedTemp}} / {{printData.bedTempMax}} 
-  </div> -->
-  </ngb-alert>
+<p *ngIf="printMessage" class="ml-2 mr-3" style="color: white;border-color: white; "> 
+  {{printMessage}}
+  <span *ngIf="printData.percentComplete > -1">
+    <ngb-progressbar type="info" [value]="printData.percentComplete">{{printData.percentComplete}}%</ngb-progressbar>
+  </span>
 </p>
+
+
+<div class="ml-3" style="color: white;border-color: white; ">
+  <div ngbDropdown class="d-inline-block " placement="bottom-left">
+    <a href="#" id="dropdownBasic1" ngbDropdownToggle> Menu </a>
+
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+      <button ngbDropdownItem routerLink="/print">Print</button>
+      <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
+      <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
+      <button ngbDropdownItem routerLink="/config">Config</button>
+      <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
+    </div>
+  </div>
+
+</div>
+
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
       <div class="row">
         <div class="col-6">
           <div class="jumbotron card card-block" style="color: white;border-color: white; ">
-            <p>
+            <p class="mb-1">
               <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{dashBoard?.extracFanRPM}} - {{
               dashBoard?.extrFanOnAuto == true ? 'Auto' : 'Manual' }}
             </p>
 
-            <p>
+            <p class="mb-1"> 
               <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon>
               {{dashBoard?.extracFanSpeed}}%
             </p>
-            <p>
+            <p class="mb-1">
 
               <img class="images" style src="assets/pollution.png" width="36" height="36" />
               {{dashBoard?.airQualityVoc}} ppm
@@ -57,16 +59,18 @@
         </div>
 
         <div class="col-6  ">
-          <div class="jumbotron card card-block" style="color: white;border-color: white; min-height: 204px; ">
+          <div class="jumbotron card card-block" style="color: white;border-color: white;  min-height: 160px;">
+
             <div>
-              <span style="font-size: 3em; " [ngStyle]="{'color': lightColor}">
+
+              <span style="font-size: 2.6em; " [ngStyle]="{'color': lightColor}">
                 <fa-icon [icon]="faLightbulb"></fa-icon>
                 <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
               </span>
 
             </div>
-            <span style="font-size: 3em; ">
-              <p class="ml-2">
+            <span style="font-size: 2.6em; ">
+              <p class="ml-2 mb-1">
                 <fa-icon [icon]="faThermometerHalf"></fa-icon> {{dashBoard?.temperature}}
               </p>
             </span>
@@ -82,15 +86,15 @@
     <div class="col-12 mt-1">
       <div class="jumbotron card card-block" style="color: white;border-color: white; ">
         <p>
-          <img class="images float-left" style src="assets/nozzle_temp.png" width="36" height="36" /> 
-          {{printData.nozzleTemp}} / {{printData.nozzleTempMax}} 
+          <img class="images float-left" style src="assets/nozzle_temp.png" width="36" height="36" />
+          {{printData.nozzleTemp}} / {{printData.nozzleTempMax}}
 
-            <span class="ml-3">
-              <img class="images " style src="assets/heatedBed.png" width="36" height="36" /> 
-              {{printData.bedTemp}} / {{printData.bedTempMax}}  
-            </span>
+          <span class="ml-3">
+            <img class="images " style src="assets/heatedBed.png" width="36" height="36" />
+            {{printData.bedTemp}} / {{printData.bedTempMax}}
+          </span>
 
-            
+
         </p>
 
       </div>

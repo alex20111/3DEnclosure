@@ -9,6 +9,7 @@ public class PrintServiceData {
 	private FileList printFile;
 	private List<FileList> listFiles;
 	private boolean printing = false;
+	private boolean printCompleted = false;
 	
 	//time/date display
 	private int printTimeSeconds = -1;
@@ -19,7 +20,6 @@ public class PrintServiceData {
 	private float nozzleTempMax = -1.0f;	
 	private boolean printerBusy = false;	
 	private int percentComplete = -1;
-	private LocalTime lastUpdate;
 	
 	public PrintServiceData() {}	
 	
@@ -74,13 +74,6 @@ public class PrintServiceData {
 		this.printerBusy = printerBusy;
 	}
 
-	public LocalTime getLastUpdate() {
-		return lastUpdate;
-	}
-
-	public void setLastUpdate(LocalTime lastUpdate) {
-		this.lastUpdate = lastUpdate;
-	}
 
 	public float getBedTempMax() {
 		return bedTempMax;
@@ -114,12 +107,37 @@ public class PrintServiceData {
 		this.percentComplete = percentComplete;
 	}
 
+	public boolean isPrintCompleted() {
+		return printCompleted;
+	}
+
+	public void setPrintCompleted(boolean printCompleted) {
+		this.printCompleted = printCompleted;
+	}
+	
+	public void setPrintFinished() {
+		setPrintTimeSeconds(0);
+		setPrinting(false);
+		setPrinterBusy(false);
+		printCompleted = true;
+		setPrintStarted(null);
+		setPercentComplete(100);
+		
+	}
+	
+	public void printAborded() {
+		setPrintTimeSeconds(0);
+		setPrinting(false);
+		setPrinterBusy(false);
+		printCompleted = true;
+	}
+
 	@Override
 	public String toString() {
 		return "PrintServiceData [printFile=" + printFile + ", listFiles=" + listFiles + ", printing=" + printing
 				+ ", printTimeSeconds=" + printTimeSeconds + ", printStarted=" + printStarted + ", bedTemp=" + bedTemp
 				+ ", bedTempMax=" + bedTempMax + ", nozzleTemp=" + nozzleTemp + ", nozzleTempMax=" + nozzleTempMax
-				+ ", printerBusy=" + printerBusy + ", lastUpdate=" + lastUpdate + "]";
+				+ ", printerBusy=" + printerBusy + "]";
 	}
 
 

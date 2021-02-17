@@ -14,7 +14,7 @@
 		    </PatternLayout>
 		    <Policies>
 		        <OnStartupTriggeringPolicy />
-		        <SizeBasedTriggeringPolicy size="30 MB" />
+		        <SizeBasedTriggeringPolicy size="50 MB" />
 		    </Policies>
 		</RollingFile>
 	</Appenders>
