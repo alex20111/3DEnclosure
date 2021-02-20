@@ -1,7 +1,5 @@
 package enclosure.pi.monitor.thread;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -9,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import enclosure.pi.monitor.printer.PrinterHandler;
 
 public class ThreadManager {
 
@@ -18,8 +18,9 @@ public class ThreadManager {
 
 
 	private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
-	private ScheduledFuture printThreadResult;
+	private ScheduledFuture<?> printerShutdown;
 	private ScheduledFuture sendSMSThread;
+	
 
 
 	private ThreadManager() {}
@@ -41,24 +42,42 @@ public class ThreadManager {
 	 * 
 	 * @param endDate
 	 */
-	public void startPrint(LocalDateTime endDate) {
+	public void shutdownPrinter(int time, TimeUnit unit) {		
 
-		LocalDateTime now = LocalDateTime.now();
+		long delay = unit.toMillis(time);
+		
+		logger.debug("ShutDown printer in: " + time + " Unit: " + unit + "  delay millis: " + delay);
+		
+		//todo cancel previous one if any
+		if (printerShutdown != null) {
+			overridePrinterShutdown();
+		}
+		
+		PrinterHandler.getInstance().getPrintData().setPrinterShutdownInProgress(true);
 
-		long delay =  ChronoUnit.MILLIS.between(now, endDate);
-
-		logger.debug("startPrint Difference in millis: " + delay);
-
-		printThreadResult = executorService.schedule(new PrintThread(), delay, TimeUnit.MILLISECONDS);
+		printerShutdown = executorService.schedule(new PrinterShutdown(), delay, TimeUnit.MILLISECONDS);
 	}
 	/**
 	 * 
 	 */
-	public void stopPrint() {
-		logger.debug("stopPrint. Is printThreadResult not null? " + ( printThreadResult != null ? "Is not null" : "is null"));
+	public void overridePrinterShutdown() {
+		logger.debug("overridePrinterShutdown. Is printerShutdown not null? " + ( printerShutdown != null ? "Is not null" : "is null"));
 
-		if (printThreadResult != null) {
-			printThreadResult.cancel(true);
+		if (printerShutdown != null) {
+			printerShutdown.cancel(true);
+			int cnt = 0;
+			while(!printerShutdown.isDone() && cnt < 20) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				cnt ++;
+			}
+			if (cnt == 20) {
+				logger.info("Could not terminate thread - overridePrinterShutdown" );
+			}
 		}
 
 	}

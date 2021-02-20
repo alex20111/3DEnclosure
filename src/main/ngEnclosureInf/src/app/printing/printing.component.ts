@@ -34,7 +34,8 @@ export class PrintingComponent implements OnInit {
 
     //build form
     this.printForm = this.formBuilder.group({
-      frm_file_to_print: ['']
+      frm_file_to_print: [''],
+      frm_auto_power_off: [false]
     });
 
     this.loading = true;
@@ -42,7 +43,8 @@ export class PrintingComponent implements OnInit {
       console.log("Print data: ", data);
       this.printUiData = data;
       this.printForm.setValue({
-        frm_file_to_print: this.printUiData.listFiles[0].fileName
+        frm_file_to_print: this.printUiData.listFiles[0].fileName,
+        frm_auto_power_off: this.printUiData.autoPrinterShutdown
       });
 
       this.loading = false;
@@ -60,24 +62,18 @@ export class PrintingComponent implements OnInit {
     if (this.printUiData) {
 
       const selectedFileName = this.printForm.value.frm_file_to_print;
+      
       const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
 
-      // const newF = new GcodeFile();
-      // newF.fileFromPi = fileToPrint.fileFromPi;
-      // newF.fileFromSd = fileToPrint.fileFromSd;
-      // newF.fileName = fileToPrint.fileName;
-      // newF.fileSize = fileToPrint.fileSize;
+      let print = new PrintServiceData();
+    print.printFile = fileToPrint;   
+    print.autoPrinterShutdown = this.printForm.value.frm_auto_power_off;
 
-      // console.log("file to print: " , newF);
-      // const fileToPrint: GcodeFile = {
-      //   fileName: this.printForm.value.frm_file_to_print,
-      //   fileFromPi: true,
-      //   fileFromSd: true
-      // };
+       if (fileToPrint) {
 
-      if (fileToPrint) {
+        console.log("SENT TO PRINTTTTTT " , print); 
 
-        this.printService.startPrinting(fileToPrint).subscribe(result => {
+        this.printService.startPrinting(print).subscribe(result => {
           console.log("Start print result message: ", result)
           if (result.messageType !== "SUCCESS") {
             this.error = result.message;
@@ -105,7 +101,7 @@ export class PrintingComponent implements OnInit {
 
     this.printService.stopPrinting().subscribe(print => {
       console.log("Stop printing message: ", print);
-      this.printService.sendPrintMessage(printInfo);
+      // this.printService.sendPrintMessage(printInfo);
       this.router.navigate(['/']);
       this.stoppingLoading = false;
     }, err => {

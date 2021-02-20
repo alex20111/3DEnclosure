@@ -7,16 +7,25 @@ import java.time.LocalDateTime;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jsoniter.output.JsonStream;
+
 import enclosure.pi.monitor.arduino.ArduinoAllSensorsData;
 import enclosure.pi.monitor.arduino.ExtractorFan;
 import enclosure.pi.monitor.arduino.Lights;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
+import enclosure.pi.monitor.arduino.PrinterPower;
+import enclosure.pi.monitor.arduino.PrinterPower.PowerAction;
 import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.common.SensorsData;
 import enclosure.pi.monitor.common.SharedData;
 import enclosure.pi.monitor.db.entity.Config;
 import enclosure.pi.monitor.printer.PrinterHandler;
+import enclosure.pi.monitor.service.model.PrintServiceData;
+import enclosure.pi.monitor.websocket.DataType;
+import enclosure.pi.monitor.websocket.SocketMessage;
+import enclosure.pi.monitor.websocket.WebSocketClient;
+import enclosure.pi.monitor.websocket.WsAction;
 
 
 //add data here to monitor automatically if function is enable.
@@ -39,10 +48,14 @@ public class MonitorThread implements Runnable{
 	LocalDateTime nextSpeedIncrease = null;
 	LocalDateTime stopFanTimer = null;
 	boolean autoStarted = false;
+	
+	private PrinterHandler ph;
 
 	public MonitorThread(int delay) {
 		logger.debug("Init monitorThread with delay: " + delay );
 		this.delay = delay;
+		
+		ph = PrinterHandler.getInstance();
 	}
 
 	@Override
@@ -72,8 +85,12 @@ public class MonitorThread implements Runnable{
 			try {
 				ArduinoAllSensorsData data = new ArduinoAllSensorsData();
 				data.requestAllSensorInfo();
-
+				
 				cfg = (Config)sd.getSharedObject(Constants.CONFIG);
+				
+				//send info to dashboard
+				sendDashboardInfo(sd, cfg);
+				
 
 				if (cfg.isExtractorAuto()) {
 					processExtractorControl(sd, cfg);
@@ -92,7 +109,7 @@ public class MonitorThread implements Runnable{
 	}
 	private void processExtractorControl(SharedData sd, Config cfg) {
 		
-		boolean printStarted =  PrinterHandler.getInstance().isPrinting();	
+		boolean printStarted = ph.isPrinting();	
 
 		if (printStarted) {
 			
@@ -190,7 +207,10 @@ public class MonitorThread implements Runnable{
 					ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 					fan.setFanSpeed(0);
 					
-					PrinterHandler.getInstance().emergencyStop();
+					ph.emergencyStop();
+					
+					PrinterPower pp = new PrinterPower(PowerAction.OFF);
+					pp.action();
 				}
 			}else if (smokeLevel == SmokeLevel.ALARM) {
 				LocalDateTime now = LocalDateTime.now();
@@ -205,6 +225,30 @@ public class MonitorThread implements Runnable{
 			smokeLevel = SmokeLevel.NO_SMOKE;
 			nextFireAlarmToBeSent = null;
 		}
+	}
+	
+	private void sendDashboardInfo(SharedData sd, Config cfg) {
+		//
+		try {
+		PrintServiceData ps = ph.getPrintData();
+		
+		
+		ps.setAirQualityCo2(sd.getSensorAsString(SensorsData.AIR_CO2));
+		ps.setAirQualityVoc(sd.getSensorAsString(SensorsData.AIR_VOC));
+		ps.setExtracFanRPM(sd.getSensorAsInt(SensorsData.EXTR_RPM));
+		ps.setExtracFanSpeed(sd.getSensorAsInt(SensorsData.EXTR_SPEED));
+		
+		LightAction la = sd.getSensor(SensorsData.LIGHT_STATUS) != null ? (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS) : LightAction.OFF;
+		ps.setLightOn(la == LightAction.ON ?  true: false);
+		ps.setTemperature(sd.getSensorAsString(SensorsData.ENC_TEMP));
+		ps.setExtrFanOnAuto(cfg.isExtractorAuto());
+		
+		SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(ps));
+		WebSocketClient.getInstance().sendMessage(msg);
+		}catch(Exception ex) {
+			logger.error("error while sending to dashboard" , ex);
+		}
+
 	}
 	
 	private int getVoc(SharedData sd) {

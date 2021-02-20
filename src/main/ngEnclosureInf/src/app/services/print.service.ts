@@ -12,14 +12,13 @@ import { Constants } from '../_model/Constants';
 export class PrintService {
 
 
-  private subject = new BehaviorSubject<any>(null);
 
   constructor(private http: HttpClient) { }
 
 
-  startPrinting(file: GcodeFile): Observable<Message>{
-    let print = new PrintServiceData();
-    print.printFile = file;    
+  startPrinting(print: PrintServiceData): Observable<Message>{
+    // let print = new PrintServiceData();
+    // print.printFile = file;    
     
     console.log("Sending:  " , print);
 
@@ -36,17 +35,16 @@ export class PrintService {
     return this.http.get<PrintServiceData>(`http://${Constants.HOST_ADDRESS}:8080/web/print/initScreen`);
   }
 
-  sendPrintMessage(message: PrintMessage){
-
-    this.subject.next(message);
+  printerOnOff(action: string): Observable<Message>{
+    return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/printerOnOff`, action);
+    
   }
 
-  getPrintMessage(): Observable<any>{
-    return this.subject.asObservable();
+  stopPrinterShutDown(): Observable<Message>{
+    return this.http.get<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/stopShutdown`);
   }
-  resetPrintMessage(): void{
-    this.subject.next(null);
-  }
+
+  
 }
 
 export class PrintServiceData{
@@ -54,6 +52,10 @@ export class PrintServiceData{
   listFiles?: GcodeFile[] = [];
   printing: boolean = false;
   printCompleted: boolean = false;
+  printerConnected: boolean = false;
+  printerAborded: boolean = false;
+  autoPrinterShutdown: boolean = false;
+  printerShutdownInProgress: boolean = false;
 
 	//time/date display
    printTimeSeconds: number = -1;
@@ -64,6 +66,14 @@ export class PrintServiceData{
 	 nozzleTempMax: number = -1.0;	
 	 printerBusy: boolean = false;	
    percentComplete: number = -1;
+//dashboard
+  extrFanOnAuto: boolean = false;
+  extracFanRPM: number = -1;
+  extracFanSpeed: number = -1;
+  temperature: string = "";
+  lightOn: boolean = false;
+  airQualityCo2: string = "";
+  airQualityVoc: string = "";
 
 }
 

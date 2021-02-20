@@ -1,11 +1,12 @@
+import { SessionService } from './../services/session.service';
 import { PiWebSocketService, SocketMessage } from './../services/pi-web-socket.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
-import { GeneralService, DashBoard } from './../services/general.service';
+import { GeneralService } from './../services/general.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { interval, Subscription, timer } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 import { faThermometerHalf, faLightbulb, faFan, faTachometerAlt, faCog } from '@fortawesome/free-solid-svg-icons';
 import { LightService } from '../services/light.service';
-
+import { Constants } from '../_model/Constants';
 
 @Component({
   selector: 'app-lcd-dashboard',
@@ -13,12 +14,15 @@ import { LightService } from '../services/light.service';
   styleUrls: ['./lcd-dashboard.component.css']
 })
 export class LcdDashboardComponent implements OnInit, OnDestroy {
-
-  dashBoard!: DashBoard;
-
   lightColor: string = 'red';
   lightText: string = 'OFF';
   lightLoading: boolean = false;
+
+  printerImg: string = "assets/3d-printer-red.png";
+  printerOnOffLoading: boolean = false;
+  coolingDelay: boolean = false;
+  coolingDelayLoading: boolean = false;
+  countdownToDate: Date;
 
   //alerts
   error: string = '';
@@ -26,7 +30,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   printMessage: string;
   printData: PrintServiceData = new PrintServiceData();
 
-  dashBoardTimer: Subscription | undefined;
+  // dashBoardTimer: Subscription | undefined;
   printerSubscription: Subscription;
 
   //icons
@@ -36,31 +40,14 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   faTachometerAlt = faTachometerAlt;
   faCog = faCog;
 
-  //timer
-  printLength: number;
-
   constructor(
     private generalService: GeneralService, private lightService: LightService, private printService: PrintService,
-    private wsSocket: PiWebSocketService) { }
+    private wsSocket: PiWebSocketService, private session: SessionService) { }
 
   ngOnInit(): void {
 
-    this.dashBoardTimer = timer(100, 6000).subscribe(val => {
-      this.generalService.dashBoard().subscribe(dshboard => {
-        this.error = '';
-        // console.log("get: " , new Date());
-        this.dashBoard = dshboard;
+    this.countdownToDate = this.session.getSharedObject(Constants.PRINTER_COOLDOWN_TIMER) as Date;
 
-        if (this.dashBoard.lightOn) {
-          this.lightColor = 'rgb(12, 247, 12)'
-        } else {
-          this.lightColor = 'red';
-        }
-      },
-        err => {
-          this.showError(err);
-        });
-    });
     this.wsSocket.connect().subscribe(wsReturn => {
       // console.log("WebSocket result", wsReturn);
 
@@ -78,23 +65,23 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   }
 
   light() {
-    this.dashBoard.lightOn = !this.dashBoard.lightOn;
-    if (this.dashBoard.lightOn) {
+    this.printData.lightOn = !this.printData.lightOn;
+    if (this.printData.lightOn) {
       this.lightText = 'ON';
     } else {
       this.lightText = 'OFF';
     }
 
     this.lightLoading = true;
-    this.lightService.switchLightState(this.dashBoard.lightOn).subscribe(
+    this.lightService.switchLightState(this.printData.lightOn).subscribe(
       result => {
         if (result.message === 'true') {
           this.lightText = 'ON';
-          this.dashBoard.lightOn = true;
+          this.printData.lightOn = true;
           this.lightColor = 'rgb(12, 247, 12)';
         } else {
           this.lightText = 'OFF';
-          this.dashBoard.lightOn = false;
+          this.printData.lightOn = false;
           this.lightColor = 'red';
         }
         this.lightLoading = false;
@@ -102,14 +89,13 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       err => {
         this.error = err.message + ' ' + err.error.error;
         this.lightText = 'OFF';
-        this.dashBoard.lightOn = false;
+        this.printData.lightOn = false;
         this.lightLoading = false;
       }
     );
   }
 
   ngOnDestroy(): void {
-    this.dashBoardTimer?.unsubscribe();
     this.wsSocket.closeSocket();
     if (this.printerSubscription) {
       this.printerSubscription.unsubscribe();
@@ -129,16 +115,88 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.error = httpError.message + ' ' + httpError.error.st;
       });
   }
+
+  connectPrinter() {
+
+    if (!this.printerOnOffLoading) {
+
+      let actionRequest = true;
+      let action = "turnOn";
+    
+
+      if (this.printData.printerConnected) {
+        if (confirm("Turn off printer? ")) {
+          action = "turnOff";
+          this.printerOnOffLoading = true;
+        } else {
+          actionRequest = false;
+        }
+      }else{
+        this.printerOnOffLoading = true;
+      }
+
+      console.log("action request", actionRequest);
+      if (actionRequest) {
+        this.coolingDelay = false;
+
+        this.printService.printerOnOff(action).subscribe(result => {
+          this.printerOnOffLoading = false;
+
+          console.log("Printer power relay", result);
+
+          if (result.messageType === "SUCCESS") {
+            if (result.message === 'on') {
+              this.printerImg = 'assets/3d-printer-green.png'
+            } else if (result.message === "offwithdelay") {
+
+              this.handlePrinterCooldown();
+              console.log("cooling delay: ", this.countdownToDate);
+              this.coolingDelay = true;
+            } else {
+              this.printerImg = 'assets/3d-printer-red.png';
+            }
+          } else if (result.messageType === "WARN") {
+            this.error = result.message;
+            this.printerImg = 'assets/3d-printer-red.png';
+          }
+        },
+          err => {
+            this.printerOnOffLoading = false;
+            this.error = err.message;
+          });
+      }
+    }
+  }
+
+  cancelShutdown() {
+    this.coolingDelayLoading = true;
+    this.printService.stopPrinterShutDown().subscribe(result => {
+      console.log("Cooling result", result);
+
+      if (result.messageType === "SUCCESS") {
+        this.printMessage = "";
+        this.coolingDelay = false;
+        this.coolingDelayLoading = false;
+        this.session.removeSharedObject(Constants.PRINTER_COOLDOWN_TIMER);
+      }
+    },
+      err => {
+        this.error = err.message;
+      });
+  }
+
   //handle websocket data
   webSocketData(message: SocketMessage) {
-    if (message.dataType === "PRINT_DATA" 
-          || message.dataType === "PRINT_TOTAL_TIME"
-          || message.dataType === "PRINT_DONE") {
+    if (message.dataType === "PRINT_DATA"
+      || message.dataType === "PRINT_TOTAL_TIME"
+      || message.dataType === "PRINT_DONE") {
       let data: PrintServiceData = JSON.parse(message.message);
+      console.log("Print data: ", data);
       this.printData = data;
+
       if (data.printing) {
         if (!this.printerSubscription) { //timer to display print time            
-          console.log("datadatadata: " , data);
+          console.log("datadatadata: ", data);
           let printStartedDate = new Date(data.printStarted);
 
           let totPrintTime = undefined;
@@ -165,21 +223,55 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
             }
             seconds = totalSeconds;
 
-            if (totPrintTime){ //if we got a time to complete in seconds
-             this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
-            }else{
-              this.printMessage = `${hours} h ${minutes} m ${seconds} s` ;
+            if (totPrintTime) { //if we got a time to complete in seconds
+              this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
+            } else {
+              this.printMessage = `${hours} h ${minutes} m ${seconds} s`;
             }
           });
         }
-      }else if (message.dataType === "PRINT_DONE") {
-        this.printMessage = "Print Completed. ";
-        this.printData = undefined;
+      } else if (data.printCompleted) { //print complete
+        if (data.printerShutdownInProgress) {
+          this.printMessage = "Print Completed. Printer cooling down and turning off in 5 min. ";
+          this.handlePrinterCooldown();
+          this.coolingDelay = true;
+
+        } else {
+          this.printMessage = "Print Completed. ";
+        }
         if (this.printerSubscription) {
           this.printerSubscription.unsubscribe();
         }
+      } else if (data.printerAborded) {
+        this.printMessage = "Print Aborded. ";
+        if (this.printerSubscription) {
+          this.printerSubscription.unsubscribe();
+        }
+      } else if (data.printerShutdownInProgress) {
+        this.printMessage = "Printer too hot, cooling down and turning off in 5 min. ";
+        this.handlePrinterCooldown();
+
+        this.coolingDelay = true;
+      } else if (!data.printerShutdownInProgress) {
+        this.printMessage = "";
+        this.coolingDelay = false;
+        this.countdownToDate = null;
+        this.session.removeSharedObject(Constants.PRINTER_COOLDOWN_TIMER);
       }
-    } 
+
+
+      if (this.printData.lightOn) {
+        this.lightColor = 'rgb(12, 247, 12)'
+      } else {
+        this.lightColor = 'red';
+      }
+
+      if (this.printData.printerConnected) {
+        this.printerImg = 'assets/3d-printer-green.png'
+      } else {
+        this.printerImg = 'assets/3d-printer-red.png';
+      }
+    }
   }
 
   private getTotalTime(sec: number): string {
@@ -199,5 +291,12 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     seconds = sec;
 
     return `${hours} h ${minutes} m ${seconds} s`;
+  }
+
+  private handlePrinterCooldown(){
+    if (!this.countdownToDate) {
+      this.countdownToDate = this.generalService.getModifiedDate(new Date(), "minute", 5);
+      this.session.putSharedObject(Constants.PRINTER_COOLDOWN_TIMER,this.countdownToDate );
+    }
   }
 }

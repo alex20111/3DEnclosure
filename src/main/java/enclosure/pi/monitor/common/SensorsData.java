@@ -17,5 +17,6 @@ public enum SensorsData {
 	    MQ2,
 	    FLAME1,
 	    FLAME2,
-	    FLAME3;
+	    FLAME3,
+	    POWER_STATUS;
 }

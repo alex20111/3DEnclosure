@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +49,6 @@ public class PrinterHandler {
 
 	boolean keepingConnectionAlive = true;
 
-	private boolean isConnected = false;
 	private boolean serialConnStarted = false;
 
 	private boolean forceStopped = false;
@@ -108,15 +108,15 @@ public class PrinterHandler {
 
 							if (portOpen) {
 								logger.info("Connected to printer");
-								isConnected = true;
+								printData.setPrinterConnected(true);
 								in = comPort.getInputStream();
 
 								Thread.sleep(6000);
 								startListening();
-								sendCommand("M155 S5", false);//send a command to get the hot end and bed temp every 10 sec 
+								sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
 							}
 							else {
-								isConnected = false;
+								printData.setPrinterConnected(false);								 
 								serialConnStarted = false;
 								logger.info("Could not connect to printer , retrying in 15 sec. " );
 							}
@@ -132,7 +132,7 @@ public class PrinterHandler {
 							if (LocalDateTime.now().isAfter(prevSdCardReading)) {
 								prevSdCardReading.plusSeconds(30);
 								//send periodic file status when SD is printing.
-								sendCommand("M27", false); //get file remaining byte to calculare % every 30 sec
+								sendCommand("M27", 0); //get file remaining byte to calculare % every 30 sec
 							}
 						}
 					}catch(Exception ex) {
@@ -151,7 +151,7 @@ public class PrinterHandler {
 
 	public void sendGcodeFileToPrinter(FileList file) throws FileNotFoundException, IllegalAccessError {
 
-		if (isConnected) {		
+		if (printData.isPrinterConnected()) {		
 
 			if (printingThread == null && !mode.isPrinting()) {
 
@@ -165,32 +165,29 @@ public class PrinterHandler {
 						@Override
 						public void run() {
 
-//							printData = new PrintServiceData();
-							printData.setPrintFile(file);
-							printData.setPrinting(true);
+							printData.startPiPrinting(file);
 							mode = PrintMode.PI_PRINTING;
-							
+
 							File gcodeFile = gcode.toFile();
-							
-							 long totalLength = gcodeFile.length();
-						        double lengthPerPercent = 100.0 / totalLength;
-						        long readLength = 0;
+
+							long totalLength = gcodeFile.length();
+							double lengthPerPercent = 100.0 / totalLength;
+							long readLength = 0;
 
 							outputs.append("!!! -- Starting print -- !!!\n");
-							try (
-									BufferedReader objReader = new BufferedReader(new FileReader(gcodeFile))){
+							try (BufferedReader objReader = new BufferedReader(new FileReader(gcodeFile))){
 
 								String str;
 								while ((str = objReader.readLine()) != null && mode.isPrinting()) {
-									
+
 									//calculate percent complete
 									int len = str.length() + 2;
 									readLength += len;
 									printData.setPercentComplete((int)Math.round(readLength * lengthPerPercent));									
-									
-									if (!str.startsWith(";") && len > 0) {
 
-										sendCommand(str, true);
+									if (!str.startsWith(";") && str.trim().length() > 0) {
+
+										sendCommand(str, 1200000);
 
 									}else if (str.contains("TIME") && !str.contains("TIME_ELAPSED")) {
 										try {
@@ -212,12 +209,7 @@ public class PrinterHandler {
 									}
 								}
 
-								logger.debug("Looop done printing sending websocket message");
-								printData.setPrintFinished();
-								SocketMessage msg = new SocketMessage(WsAction.SEND, DataType.PRINT_DONE, JsonStream.serialize(printData) );
-								WebSocketClient.getInstance().sendMessage(msg);
-								//send SMS message
-								ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
+								finalizePiPrinting();
 
 							}catch(IOException e) {
 								stopPrinting(); 
@@ -228,6 +220,7 @@ public class PrinterHandler {
 								Thread.currentThread().interrupt();
 							}
 							mode = PrintMode.NOT_PRINTING;
+
 							printingThread = null;
 
 							outputs.append("!!! == print thread finished == !!!\n");
@@ -250,21 +243,18 @@ public class PrinterHandler {
 	}
 
 	public void startPrintFromSD(FileList file) throws IllegalAccessError{
-		if (isConnected) {
+		if (printData.isPrinterConnected()) {
 
 			if (!mode.isPrinting()) {
 
 				try {
 					//					sendCommand("M111 S1", true);
 					//select file
-					sendCommand("M23 " + file.getFileName(), true); //select file name
+					sendCommand("M23 " + file.getFileName(), 20000); //select file name
 
 					//sent print command
-					sendCommand("M24", true);  
-					printData.setPrinting(true);
-					printData.setPrintStarted(LocalDateTime.now().toString());
-					printData.setPercentComplete(0);
-					printData.setPrintFile(file);
+					sendCommand("M24", 20000);  
+					printData.startSDPrinting(file);
 
 					SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_TOTAL_TIME, JsonStream.serialize(printData));
 					WebSocketClient.getInstance().sendMessage(msg);
@@ -287,9 +277,12 @@ public class PrinterHandler {
 	/**
 	 * Get a list of files on the sd card
 	 * @return
+	 * @throws IOException 
 	 */
-	public List<String> getSdCardFileList() {
+	public List<String> getSdCardFileList() throws IOException {
 		logger.debug("Getting SD Card file List");
+		
+		if(printData.isPrinterConnected()) {
 
 		fileList.clear();
 		sdCardReady = false;
@@ -297,7 +290,7 @@ public class PrinterHandler {
 			for(int i = 0; i < 6; i++) {
 				if (!sdCardReady) {
 					logger.debug("checking if sd card ready");
-					sendCommand("M21", true);  //see if the SD card is ready
+					sendCommand("M21", 20000);  //see if the SD card is ready
 				}
 				else if (sdCardReady) {
 					break;
@@ -306,7 +299,7 @@ public class PrinterHandler {
 			logger.debug("sd carc ready:  " + sdCardReady);
 			if (sdCardReady) {
 
-				sendCommand("M20", true);	// list files on the card.			
+				sendCommand("M20", 20000);	// list files on the card.			
 			}else {
 				logger.error("cannot initialize SD card  ");
 			}
@@ -315,6 +308,9 @@ public class PrinterHandler {
 			logger.error("Message acessing SD card" , ex);
 		}
 		writeOutputs();
+		}else {
+			throw new IOException("Printer not connected, cannot get files");
+		}
 		return fileList;
 	}
 
@@ -327,6 +323,7 @@ public class PrinterHandler {
 				logger.debug("Stopping PI Printing!!");
 
 				mode = PrintMode.NOT_PRINTING;
+				printData.printAborded();
 				if (printingThread != null) {
 					printingThread.interrupt();
 					forceStopped = true;
@@ -338,7 +335,6 @@ public class PrinterHandler {
 					}
 
 					logger.debug("Starting stop printing commands");
-					printData.printAborded();
 					printingThread = null;
 
 					forceStopped = false; // reset so we can send commands..
@@ -361,7 +357,7 @@ public class PrinterHandler {
 					endGcode.add("M104 S0");
 
 					for (String str : endGcode) {
-						sendCommand(str, true);
+						sendCommand(str, 1200000);
 					}
 
 					mode = PrintMode.NOT_PRINTING; 
@@ -372,7 +368,7 @@ public class PrinterHandler {
 				//do stop code here
 				mode = PrintMode.NOT_PRINTING; //TODO  stop initiated.. bed and nozzle still heating.. will stop after..
 
-				sendCommand("M524", false);  // this is the SD stop
+				sendCommand("M524", 0);  // this is the SD stop
 			}
 		}catch(InterruptedException | IOException ex) {
 			logger.error("Error in stopping printer", ex);
@@ -384,9 +380,6 @@ public class PrinterHandler {
 	public PrintServiceData getPrintData() {
 		return this.printData;
 	}
-	public boolean isConnected() {
-		return isConnected;
-	}
 	public boolean isPrinting() {
 		return mode.isPrinting();
 	}
@@ -394,23 +387,24 @@ public class PrinterHandler {
 	public void emergencyStop() {
 		logger.info("Sending emergency stop ");
 		try {
-			sendCommand("M112", false);
+			printData.printAborded();
+			sendCommand("M112", 0);
 		} catch (IOException | InterruptedException e) {
 			logger.error("error emergencyStop" , e);
 		}
 	}
 
 
-	private void sendCommand(String command, boolean wait) throws IOException, InterruptedException {
+	private void sendCommand(String command, int wait) throws IOException, InterruptedException {
 		outputs.append("Writing: " + command + "\n");
-//		logger.debug("Writing: " + command );
+				logger.debug("Writing: " + command );
 		String s2cmd = command + "\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
 
-		if (wait) {
+		if (wait > 0) {
 			synchronized (monitor) {
-				monitor.wait(20000);
+				monitor.wait(wait);
 			}
 		}
 	}
@@ -429,20 +423,19 @@ public class PrinterHandler {
 
 			if(LocalDateTime.now().isAfter(breakNowFuture)) {
 				logger.debug("No printer connteted");
-				isConnected = false;
+				printData.setPrinterConnected(false);
 				answer = false;
-				//			break;
 			}
 		}catch(InterruptedException ie) {
 			logger.info("verifyPrinterConnected was interrupted", ie );
-			isConnected = false;
+			printData.setPrinterConnected(false);
 			answer = false;
 		}
 		return answer;
 	}
 
 	private void sendTempData(String evnt) {
-//		logger.debug("sendTempData: " + evnt);
+		//		logger.debug("sendTempData: " + evnt);
 		try {
 			String strSplit[] = evnt.trim().split(" ");
 
@@ -455,15 +448,12 @@ public class PrinterHandler {
 			printData.setNozzleTemp(Float.valueOf(nozzle));
 			printData.setNozzleTempMax(Float.valueOf(nozzleMax));
 
-			SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
-			WebSocketClient.getInstance().sendMessage(msg);
 		}catch (Exception e) {
 			logger.error("Exception in sendTempData" , e);
 		}
 	}
 
 	private void sendPercentCompleted(String line) {
-//		logger.debug("sendPercentCompleted: " + line);
 		try {
 			String subStr = line.substring(line.indexOf("byte") + 4, line.length()).trim();
 			String bytesRemaining[] = subStr.split("/");		
@@ -474,8 +464,6 @@ public class PrinterHandler {
 			int percent = (int)percentDbl;
 
 			printData.setPercentComplete(percent);
-			SocketMessage msg = new SocketMessage(WsAction.SEND,DataType.PRINT_DATA, JsonStream.serialize(printData));
-			WebSocketClient.getInstance().sendMessage(msg);
 		}catch(Exception e) {
 			logger.info("Problem with percentage conversion" , e);
 		}
@@ -510,8 +498,8 @@ public class PrinterHandler {
 									String line;
 									while( (line = br.readLine() ) != null) {
 										outputs.append("Response: " + line + "\n");
-//										logger.debug("Response: " + line );
-										if (line.startsWith("ok") &&  !line.contains("T:") && !line.contains("B:") ) {
+																				logger.debug("Response: " + line );
+										if (line.startsWith("ok") ) {
 											synchronized (monitor) {
 												monitor.notifyAll();
 											}
@@ -537,6 +525,7 @@ public class PrinterHandler {
 							}
 						}catch(IOException e) {
 							logger.error("Error in listening thread" , e);
+							serialConnStarted = false;
 							break;
 						}
 					}
@@ -552,7 +541,7 @@ public class PrinterHandler {
 
 				//wait until got good data
 				for(int i=0 ; i < 5 ; i ++) {
-					sendCommand("M111", true);
+					sendCommand("M111", 20000);
 					if (serialConnStarted) {
 						break;
 					}
@@ -573,7 +562,26 @@ public class PrinterHandler {
 		WebSocketClient.getInstance().sendMessage(msg);
 
 		//send SMS message
-		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
+		ThreadManager tm = ThreadManager.getInstance();
+		tm.sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
+		
+		if (printData.isAutoPrinterShutdown()) {  //TODO 
+			tm.shutdownPrinter(5, TimeUnit.MINUTES);
+		}
 		writeOutputs();
+	}
+	private void finalizePiPrinting() {
+		
+		logger.debug("Looop done printing sending websocket message");
+		printData.setPrintFinished();
+		
+		if (printData.isAutoPrinterShutdown()) {  
+			ThreadManager.getInstance().shutdownPrinter(5, TimeUnit.MINUTES);
+		}
+		SocketMessage msg = new SocketMessage(WsAction.SEND, DataType.PRINT_DONE, JsonStream.serialize(printData) );
+		WebSocketClient.getInstance().sendMessage(msg);
+		//send SMS message
+		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
+		
 	}
 }

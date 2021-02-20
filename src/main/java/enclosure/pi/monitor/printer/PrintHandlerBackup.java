@@ -19,16 +19,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jsoniter.output.JsonStream;
-import com.pi4j.io.serial.Baud;
-import com.pi4j.io.serial.DataBits;
-import com.pi4j.io.serial.FlowControl;
-import com.pi4j.io.serial.Parity;
-import com.pi4j.io.serial.Serial;
-import com.pi4j.io.serial.SerialConfig;
-import com.pi4j.io.serial.SerialDataEvent;
-import com.pi4j.io.serial.SerialDataEventListener;
-import com.pi4j.io.serial.SerialFactory;
-import com.pi4j.io.serial.StopBits;
+//import com.pi4j.io.serial.Baud;
+//import com.pi4j.io.serial.DataBits;
+//import com.pi4j.io.serial.FlowControl;
+//import com.pi4j.io.serial.Parity;
+//import com.pi4j.io.serial.Serial;
+//import com.pi4j.io.serial.SerialConfig;
+//import com.pi4j.io.serial.SerialDataEvent;
+//import com.pi4j.io.serial.SerialDataEventListener;
+//import com.pi4j.io.serial.SerialFactory;
+//import com.pi4j.io.serial.StopBits;
 
 import enclosure.pi.monitor.common.Constants;
 import enclosure.pi.monitor.service.model.PrintServiceData;
@@ -45,13 +45,13 @@ public class PrintHandlerBackup {
 
 	private static PrintHandlerBackup printerHandler;
 
-	private Serial serial;
-	private SerialConfig config;
+//	private Serial serial;
+//	private SerialConfig config;
 
 	private Path filePath;
 
 	boolean keepingConnectionAlive = true;
-	private printerSerialListener listener = null;
+//	private printerSerialListener listener = null;
 
 	private boolean isConnected = false;
 	private boolean sendingGcode = false;
@@ -85,67 +85,67 @@ public class PrintHandlerBackup {
 	}	
 
 	private void connect() {
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0";
-
-				serial = SerialFactory.createInstance();
-				config = new SerialConfig();
-				config.device(usbPort)
-				.baud(Baud._115200)
-				.dataBits(DataBits._8)
-				.parity(Parity.NONE)
-				.stopBits(StopBits._1)
-				.flowControl(FlowControl.NONE);
-
-				while(keepingConnectionAlive) {
-					try {
-						logger.debug("Serial is open: " + serial.isOpen() + " Closed: " + serial.isClosed() );
-
-						if (!serial.isOpen()) {
-							try {
-								serial.open(config);
-
-								if (listener != null && serial != null) {
-									logger.debug("Printer listener not null, removing");
-									serial.removeListener(listener);
-									listener = null;
-								}
-
-								listener = new printerSerialListener();
-								serial.addListener(listener);
-								logger.info("Connected to printer");
-								isConnected = true;
-
-							} catch (IOException e) {
-								logger.info("Could not connect to printer , retrying in 5 sec. Message: " + e.getMessage() );
-							}
-						}else if (serial != null && serial.isOpen()) {
-							//test if can get RTS
-							try {
-								boolean ok = serial.getDSR();
-//								logger.debug("dsr: " + ok);						
-
-							}catch(IOException | IllegalStateException e) {
-								logger.info("Cannot contact printer, disconnecting");
-								isConnected = false;
-								serial.close();
-							}
-						}
-					}catch(Exception ex) {
-						logger.error("Thread printer: " , ex);
-					}
-					try {
-						Thread.sleep(5000);
-					} catch (InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
-				}
-			}
-
-		}).start();
+//		new Thread(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0";
+//
+////				serial = SerialFactory.createInstance();
+////				config = new SerialConfig();
+////				config.device(usbPort)
+////				.baud(Baud._115200)
+////				.dataBits(DataBits._8)
+////				.parity(Parity.NONE)
+////				.stopBits(StopBits._1)
+////				.flowControl(FlowControl.NONE);
+//
+//				while(keepingConnectionAlive) {
+//					try {
+//						logger.debug("Serial is open: " + serial.isOpen() + " Closed: " + serial.isClosed() );
+////
+////						if (!serial.isOpen()) {
+////							try {
+////								serial.open(config);
+////
+////								if (listener != null && serial != null) {
+////									logger.debug("Printer listener not null, removing");
+////									serial.removeListener(listener);
+////									listener = null;
+////								}
+////
+////								listener = new printerSerialListener();
+////								serial.addListener(listener);
+////								logger.info("Connected to printer");
+////								isConnected = true;
+////
+////							} catch (IOException e) {
+////								logger.info("Could not connect to printer , retrying in 5 sec. Message: " + e.getMessage() );
+////							}
+////						}else if (serial != null && serial.isOpen()) {
+////							//test if can get RTS
+////							try {
+////								boolean ok = serial.getDSR();
+//////								logger.debug("dsr: " + ok);						
+////
+////							}catch(IOException | IllegalStateException e) {
+////								logger.info("Cannot contact printer, disconnecting");
+////								isConnected = false;
+////								serial.close();
+////							}
+//						}
+//					}catch(Exception ex) {
+//						logger.error("Thread printer: " , ex);
+//					}
+//					try {
+//						Thread.sleep(5000);
+//					} catch (InterruptedException e) {
+//						Thread.currentThread().interrupt();
+//					}
+//				}
+//			}
+//
+//		}).start();
 	}
 
 	public void sendGcodeFileToPrinter(String file) throws FileNotFoundException, IllegalAccessError {
@@ -181,7 +181,7 @@ public class PrintHandlerBackup {
 								while ((str = objReader.readLine()) != null && sendingGcode) {
 									if (!str.startsWith(";") && str.length() > 0) {
 										//										outputs.append("\nWriting: " + str);
-										serial.write(str + "\r\n");										
+//										serial.write(str + "\r\n");										
 										synchronized(monitor) {							
 											monitor.wait();							
 										}
@@ -208,7 +208,7 @@ public class PrintHandlerBackup {
 								logger.debug("Looop done printing sending websocket message");
 								printData.setPrintTimeSeconds(0);
 								printData.setPrinting(false);
-								printData.setPrinterBusy(false);
+//								printData.setPrinterBusy(false);
 								SocketMessage msg = new SocketMessage(WsAction.SEND, DataType.PRINT_DONE, "Print Done!!" );
 								WebSocketClient.getInstance().sendMessage(msg);
 								//send SMS message
@@ -307,7 +307,7 @@ public class PrintHandlerBackup {
 			try {
 				for (String str : endGcode) {
 					//					outputs.append("\nWrite stop: " + str);
-					serial.write(str + "\r\n" );
+//					serial.write(str + "\r\n" );
 					synchronized(monitor) {							
 						monitor.wait();							
 					}
@@ -337,32 +337,32 @@ public class PrintHandlerBackup {
 	//		}
 	//	}
 
-	class printerSerialListener implements SerialDataEventListener{
-
-		@Override
-		public void dataReceived(SerialDataEvent event) {
-			try {
-				String eventString =  event.getAsciiString();
-
-				if (sendingGcode) {
-					if (eventString.contains("ok")){
-
-						synchronized(monitor) {
-							monitor.notifyAll();
-						}
-					}else {
-						if (eventString.contains("T:") && eventString.contains("B:")) {
-							sendTempData(eventString);
-						}
-					}
-				}
-
-
-			}catch(Exception ex) {
-				logger.error("error in dataReceived", ex);
-			}
-
-		}
+//	class printerSerialListener implements SerialDataEventListener{
+//
+//		@Override
+//		public void dataReceived(SerialDataEvent event) {
+//			try {
+//				String eventString =  event.getAsciiString();
+//
+//				if (sendingGcode) {
+//					if (eventString.contains("ok")){
+//
+//						synchronized(monitor) {
+//							monitor.notifyAll();
+//						}
+//					}else {
+//						if (eventString.contains("T:") && eventString.contains("B:")) {
+//							sendTempData(eventString);
+//						}
+//					}
+//				}
+//
+//
+//			}catch(Exception ex) {
+//				logger.error("error in dataReceived", ex);
+//			}
+//
+//		}
 
 		private void sendTempData(String evnt) {
 			logger.debug("sendTempData: " + evnt);
@@ -385,5 +385,5 @@ public class PrintHandlerBackup {
 			}
 		}
 
-	}
+//	}
 }

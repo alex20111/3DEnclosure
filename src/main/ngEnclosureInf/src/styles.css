@@ -1,3 +1,15 @@
 body {
     background-color: black;
 }
+.jumbotron {
+    /* background: black 0.5; */
+     /* opacity: 0.5;  */
+      background: rgb(54, 53, 53);  
+     background: rgba(54, 53, 53, 0.1);  
+     /* min-height: 200px; */
+     padding: 6px 6px 6px 6px;
+     margin-bottom: 5px;
+     color: white;
+     border-color: white;
+     border-width: 2px;
+ }

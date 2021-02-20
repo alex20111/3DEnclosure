@@ -1,9 +1,6 @@
 	package enclosure.pi.monitor.service;
 
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -59,7 +56,6 @@ public class FanControlService {
 				fanSpeed = 0;
 			}
 
-//			int speed = ExtractorFan.speedMap.get(fanSpeed);
 			logger.debug("fanSpeed: " + fanSpeed);
 
 			ExtractorFan exFan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);

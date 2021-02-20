@@ -12,10 +12,15 @@
     <div [innerHTML]="message"></div>
   </ngb-alert>
 </p>
-<p *ngIf="printMessage" class="ml-2 mr-3" style="color: white;border-color: white; "> 
+<p *ngIf="printMessage" class="ml-2 mr-3" style="color: white;border-color: white; " >
   {{printMessage}}
   <span *ngIf="printData.percentComplete > -1">
     <ngb-progressbar type="info" [value]="printData.percentComplete">{{printData.percentComplete}}%</ngb-progressbar>
+  </span>
+  <span *ngIf="coolingDelay">
+    <button [disabled]="coolingDelayLoading" class="btn btn-primary" (click)="cancelShutdown()">   
+      <span *ngIf="coolingDelayLoading" class="spinner-border spinner-border-sm mr-1"></span>
+      Cancel shutdown</button>
   </span>
 </p>
 
@@ -42,39 +47,64 @@
         <div class="col-6">
           <div class="jumbotron card card-block" style="color: white;border-color: white; ">
             <p class="mb-1">
-              <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{dashBoard?.extracFanRPM}} - {{
-              dashBoard?.extrFanOnAuto == true ? 'Auto' : 'Manual' }}
+              <fa-icon class="mr-1 " style="font-size: 2em; " [icon]="faFan"></fa-icon> {{printData?.extracFanRPM}} - {{
+              printData?.extrFanOnAuto == true ? 'Auto' : 'Manual' }}
             </p>
 
-            <p class="mb-1"> 
+            <p class="mb-1">
               <fa-icon class="mr-1" style="font-size: 2em; " [icon]="faTachometerAlt"></fa-icon>
-              {{dashBoard?.extracFanSpeed}}%
+              {{printData?.extracFanSpeed}}%
             </p>
             <p class="mb-1">
 
               <img class="images" style src="assets/pollution.png" width="36" height="36" />
-              {{dashBoard?.airQualityVoc}} ppm
+              {{printData?.airQualityVoc}} ppm
             </p>
           </div>
         </div>
 
         <div class="col-6  ">
-          <div class="jumbotron card card-block" style="color: white;border-color: white;  min-height: 160px;">
+          <!-- <div class="jumbotron card card-block" style="color: white;border-color: white;  min-height: 160px;"> -->
 
-            <div>
-
-              <span style="font-size: 2.6em; " [ngStyle]="{'color': lightColor}">
-                <fa-icon [icon]="faLightbulb"></fa-icon>
-                <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
-              </span>
-
+          <div class="row">
+            <div class="col-6  " style="padding-left: 5px" (click)="light()" >
+              <div class="jumbotron card card-block" style="color: white;border-color: white; ; min-height: 78px; ">
+                <div style="font-size: 2.4em; " [ngStyle]="{'color': lightColor}" class="center">
+                  <fa-icon [icon]="faLightbulb"></fa-icon>
+                  <span *ngIf="lightLoading" class="spinner-border spinner-border-sm mr-1"></span>
+                </div>
+              </div>
             </div>
-            <span style="font-size: 2.6em; ">
-              <p class="ml-2 mb-1">
-                <fa-icon [icon]="faThermometerHalf"></fa-icon> {{dashBoard?.temperature}}
-              </p>
-            </span>
+
+
+            <div class="col-6 " style="padding-left: 5px;" (click)="connectPrinter()">
+              <div class="jumbotron card card-block mr-2" style="color: white;border-color: white; ; min-height: 76px; ">
+
+                <img class="images" [src]="printerImg" width="48" height="48" class="center" />
+                <div *ngIf="coolingDelay"  class="text-block">   
+                  
+                  <app-countdown [timerStartDate]="countdownToDate"></app-countdown>               
+                
+                 </div>
+                <div  *ngIf="printerOnOffLoading" class=" spinner-block spinner-border spinner-border-sm "></div>
+              </div>
+            </div>
           </div>
+
+          <div class="row">
+            <div class="col-12  " style="padding-left: 5px; ">
+              <div class="jumbotron card card-block mr-2" style="color: white;border-color: white; ; min-height: 76px; ">
+
+                <span>
+                  <p class="ml-2 mb-1" style="font-size: 2.4em; ">
+                    <fa-icon [icon]="faThermometerHalf"></fa-icon> {{printData?.temperature}}
+                  </p>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- </div> -->
         </div>
       </div>
     </div>
@@ -84,7 +114,7 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-12 mt-1">
-      <div class="jumbotron card card-block" style="color: white;border-color: white; ">
+      <div class="jumbotron card card-block mr-2" style="color: white;border-color: white; ">
         <p>
           <img class="images float-left" style src="assets/nozzle_temp.png" width="36" height="36" />
           {{printData.nozzleTemp}} / {{printData.nozzleTempMax}}

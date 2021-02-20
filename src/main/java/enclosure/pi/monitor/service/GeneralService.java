@@ -29,46 +29,46 @@ public class GeneralService {
 	private boolean isServerShuttingDown = false;
 
 
-	@Path("dashboard")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response dashBoard() {
-		
-//		logger.debug("dashBoard. ");
-
-
-		Message msg = new Message(MessageType.ERROR, "Severe error in dashBoard");
-		Status status = Status.FORBIDDEN;
-		try {
-			
-
-			final SharedData sd = SharedData.getInstance();	
-			final ConfigSql sql = new ConfigSql();
-			
-			
-			DashBoard db = new DashBoard();
-
-			db.setAirQualityCo2(sd.getSensorAsString(SensorsData.AIR_CO2));
-			db.setAirQualityVoc(sd.getSensorAsString(SensorsData.AIR_VOC));
-			db.setExtracFanRPM(sd.getSensorAsInt(SensorsData.EXTR_RPM));
-			db.setExtracFanSpeed(sd.getSensorAsInt(SensorsData.EXTR_SPEED));
-			
-			LightAction la = sd.getSensor(SensorsData.LIGHT_STATUS) != null ? (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS) : LightAction.OFF;
-			db.setLightOn(la == LightAction.ON ?  true: false);
-			db.setTemperature(sd.getSensorAsString(SensorsData.ENC_TEMP));
-			db.setExtrFanOnAuto(sql.loadConfig().isExtractorAuto());
-
-
-			return Response.ok().entity(db).build();
-
-		}catch(Exception e) {
-			logger.error("Error in dashBoard" , e);
-			status = Status.BAD_REQUEST;
-			msg = new Message(MessageType.ERROR, e.getMessage());
-		}
-
-		return Response.status(status).entity(msg).build();	
-	}
+//	@Path("dashboard")
+//	@GET
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Response dashBoard() {
+//		
+////		logger.debug("dashBoard. ");
+//
+//
+//		Message msg = new Message(MessageType.ERROR, "Severe error in dashBoard");
+//		Status status = Status.FORBIDDEN;
+//		try {
+//			
+//
+////			final SharedData sd = SharedData.getInstance();	
+//			final ConfigSql sql = new ConfigSql();
+//			
+//			
+//			DashBoard db = new DashBoard();
+////
+////			db.setAirQualityCo2(sd.getSensorAsString(SensorsData.AIR_CO2));
+////			db.setAirQualityVoc(sd.getSensorAsString(SensorsData.AIR_VOC));
+////			db.setExtracFanRPM(sd.getSensorAsInt(SensorsData.EXTR_RPM));
+////			db.setExtracFanSpeed(sd.getSensorAsInt(SensorsData.EXTR_SPEED));
+////			
+////			LightAction la = sd.getSensor(SensorsData.LIGHT_STATUS) != null ? (LightAction) sd.getSensor(SensorsData.LIGHT_STATUS) : LightAction.OFF;
+////			db.setLightOn(la == LightAction.ON ?  true: false);
+////			db.setTemperature(sd.getSensorAsString(SensorsData.ENC_TEMP));
+////			db.setExtrFanOnAuto(sql.loadConfig().isExtractorAuto());
+//
+//
+//			return Response.ok().entity(db).build();
+//
+//		}catch(Exception e) {
+//			logger.error("Error in dashBoard" , e);
+//			status = Status.BAD_REQUEST;
+//			msg = new Message(MessageType.ERROR, e.getMessage());
+//		}
+//
+//		return Response.status(status).entity(msg).build();	
+//	}
 
 
 

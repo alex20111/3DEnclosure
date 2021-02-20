@@ -29,8 +29,6 @@ public class WebSocketHandler {
 			register(session);
 		}else if (msg.getAction() == WsAction.CLOSE) {
 			processOnClose(session);
-		}else if (msg.getAction() == WsAction.PRINT_FINISHED) {
-			this.printData = null;
 		}else if (msg.getAction() == WsAction.SEND) {  //sendin data to all registered users .. 
 
 			if(msg.getDataType().isPrintData()) {
@@ -38,7 +36,7 @@ public class WebSocketHandler {
 				this.printData = message;
 			}
 			for(UserSession u: userSessions) {				
-				logger.debug("Sending to: " + u.getSession().getId());
+//				logger.debug("Sending to: " + u.getSession().getId());
 				u.SendData(message );
 
 			}

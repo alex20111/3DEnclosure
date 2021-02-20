@@ -1,5 +1,6 @@
 package enclosure.pi.monitor.arduino;
 
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -9,24 +10,20 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.pi4j.io.serial.Baud;
-import com.pi4j.io.serial.DataBits;
-import com.pi4j.io.serial.FlowControl;
-import com.pi4j.io.serial.Parity;
-import com.pi4j.io.serial.Serial;
-import com.pi4j.io.serial.SerialConfig;
-import com.pi4j.io.serial.SerialDataEvent;
-import com.pi4j.io.serial.SerialDataEventListener;
-import com.pi4j.io.serial.SerialFactory;
-import com.pi4j.io.serial.StopBits;
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
+
 
 
 public class ArduinoHandler {
 
 	private static final Logger logger = LogManager.getLogger(ArduinoHandler.class);
 
-	private Serial serial;
-	private SerialConfig config;
+	//	private Serial serial;
+	//	private SerialConfig config;
+	private SerialPort arduinoPort;
+	private boolean arduinoPortOpen = false;
 	private boolean arduinoReady = false;
 
 	private static ArduinoHandler arduinoHandler;
@@ -37,20 +34,16 @@ public class ArduinoHandler {
 	private ArduinoSerialEvent ardSerialEvent;
 
 	private ArduinoHandler() {		
-		
-		String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.4.2:1.0-port0";
-		
-		serial = SerialFactory.createInstance();
-		config = new SerialConfig();
-		config.device(usbPort)
-		.baud(Baud._19200)
-		.dataBits(DataBits._8)
-		.parity(Parity.NONE)
-		.stopBits(StopBits._1)
-		.flowControl(FlowControl.NONE);
+
+		boolean portOpen = connectToArduino();		
+
+		if (portOpen) {
+			arduinoPortOpen = true;
+		}
+
 
 		startListener();
-
+		//
 		ardSerialEvent = new ArduinoSerialEvent();
 
 	}
@@ -67,11 +60,6 @@ public class ArduinoHandler {
 		return arduinoHandler;
 	}	
 
-	public void openSerialConnection() throws IOException {
-		if (!serial.isOpen()) {
-			serial.open(config);
-		}
-	}
 
 	public BlockingQueue<Integer> extFanRpmQueue(){
 		return rpmQueue;
@@ -92,8 +80,9 @@ public class ArduinoHandler {
 	public synchronized void writeToSerial(String command) throws IllegalStateException, IOException {
 		logger.debug("Arduino Ready? " + arduinoReady + " Writing command: " + command);
 
-		if (arduinoReady) {
-			serial.write(command);
+		if (arduinoReady && arduinoPortOpen) {
+			byte[] toB = command.getBytes();
+			arduinoPort.writeBytes(toB, toB.length);
 		}else {
 			logger.info("Arduino not ready.. bypassing command");
 		}
@@ -101,23 +90,38 @@ public class ArduinoHandler {
 	}
 
 	private void startListener() {
-		serial.addListener(new SerialDataEventListener() {
+
+		arduinoPort.addDataListener(new SerialPortDataListener() {
 			@Override
-			public void dataReceived(SerialDataEvent event) {
+			public int getListeningEvents() { return SerialPort.LISTENING_EVENT_DATA_RECEIVED; }
+
+			@Override
+			public void serialEvent(SerialPortEvent event)
+			{
+
 				try {
-					String eventString =  event.getAsciiString();
-	
-					if ("Ready".equalsIgnoreCase(eventString.trim())) {
+					StringBuilder eventString = new StringBuilder();
+					byte[] newData = event.getReceivedData();
+					//							System.out.println("Received data of size: " + newData.length);
+					for (int i = 0; i < newData.length; ++i)	{
+						eventString.append((char)newData[i]);
+
+					}
+
+					String evnt = eventString.toString().trim();
+
+					//							logger.debug("From arduino: " + evnt);
+					if ("Ready".equalsIgnoreCase(evnt)) {
 						arduinoReady = true;
 						logger.info("!! Arduino READY !!");
 					} else { 
-						
-						ardSerialEvent.processEvent(eventString);
-						
+
+						ardSerialEvent.processEvent(evnt);
+
 						List<CleanedEvent> ev = ardSerialEvent.getOutputs();
-						
+
 						logger.debug("eventString: " + eventString + " Returned event -------------------> " + ev);
-						
+
 						for(CleanedEvent cl : ev) {
 							if (cl.getCommand().equalsIgnoreCase(Command.GET_RPM_CMD)) {
 								rpmQueue.offer( Integer.parseInt( cl.getData() ), 4000, TimeUnit.MILLISECONDS);
@@ -127,13 +131,36 @@ public class ArduinoHandler {
 								allSensorQueue.offer(cl.getData(), 4000, TimeUnit.MILLISECONDS);
 							}
 						}
-		
+
 					}
 
-				} catch (Exception e) {
-					logger.error("Error in arduino listener" , e);
-				} 
+				}catch(Exception ex) {
+					logger.error("Serial event" , ex);
+				}
 			}
 		});
+
+	}
+
+	private boolean connectToArduino() {
+		String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.4.2:1.0-port0";
+
+
+		arduinoPort = SerialPort.getCommPort(usbPort);
+
+		arduinoPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
+		arduinoPort.setBaudRate(19200);
+		arduinoPort.setNumDataBits(8);
+		arduinoPort.setNumStopBits(SerialPort.ONE_STOP_BIT);
+		arduinoPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);
+		arduinoPort.setParity(SerialPort.NO_PARITY);
+
+		boolean portOpen = arduinoPort.openPort();
+
+		if (portOpen) {
+			return true;
+		}
+
+		return false;
 	}
 }

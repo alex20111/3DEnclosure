@@ -1,7 +1,6 @@
 package enclosure.pi.monitor.service.model;
 
-
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class PrintServiceData {
@@ -10,6 +9,10 @@ public class PrintServiceData {
 	private List<FileList> listFiles;
 	private boolean printing = false;
 	private boolean printCompleted = false;
+	private boolean printerConnected = false;
+	private boolean printerAborded = false;
+	private boolean autoPrinterShutdown = false;
+	private boolean printerShutdownInProgress = false;
 	
 	//time/date display
 	private int printTimeSeconds = -1;
@@ -18,10 +21,62 @@ public class PrintServiceData {
 	private float bedTempMax = -1.0f;
 	private float nozzleTemp = -1.0f;
 	private float nozzleTempMax = -1.0f;	
-	private boolean printerBusy = false;	
 	private int percentComplete = -1;
 	
+	//dashboard info
+	private boolean extrFanOnAuto = false;
+	private int extracFanRPM = -1;
+	private int extracFanSpeed = -1;
+	private String temperature = "";
+	private boolean lightOn = false;
+	private String airQualityCo2 = "";
+	private String airQualityVoc = "";
+		
 	public PrintServiceData() {}	
+	
+	public boolean isExtrFanOnAuto() {
+		return extrFanOnAuto;
+	}
+	public void setExtrFanOnAuto(boolean extrFanOnAuto) {
+		this.extrFanOnAuto = extrFanOnAuto;
+	}
+	public int getExtracFanRPM() {
+		return extracFanRPM;
+	}
+	public void setExtracFanRPM(int extracFanRPM) {
+		this.extracFanRPM = extracFanRPM;
+	}
+	public int getExtracFanSpeed() {
+		return extracFanSpeed;
+	}
+	public void setExtracFanSpeed(int extracFanSpeed) {
+		this.extracFanSpeed = extracFanSpeed;
+	}
+	public String getTemperature() {
+		return temperature;
+	}
+	public void setTemperature(String temperature) {
+		this.temperature = temperature;
+	}
+	public boolean isLightOn() {
+		return lightOn;
+	}
+	public void setLightOn(boolean lightOn) {
+		this.lightOn = lightOn;
+	}
+	public String getAirQualityVoc() {
+		return airQualityVoc;
+	}
+	public void setAirQualityVoc(String airQualityVoc) {
+		this.airQualityVoc = airQualityVoc;
+	}
+	public String getAirQualityCo2() {
+		return airQualityCo2;
+	}
+	public void setAirQualityCo2(String airQualityCo2) {
+		this.airQualityCo2 = airQualityCo2;
+	}
+
 	
 	public FileList getPrintFile() {
 		return printFile;
@@ -66,15 +121,6 @@ public class PrintServiceData {
 		this.nozzleTemp = nozzleTemp;
 	}
 
-	public boolean isPrinterBusy() {
-		return printerBusy;
-	}
-
-	public void setPrinterBusy(boolean printerBusy) {
-		this.printerBusy = printerBusy;
-	}
-
-
 	public float getBedTempMax() {
 		return bedTempMax;
 	}
@@ -114,34 +160,90 @@ public class PrintServiceData {
 	public void setPrintCompleted(boolean printCompleted) {
 		this.printCompleted = printCompleted;
 	}
+	public void startPiPrinting(FileList file) {
+		printerShutdownInProgress = false;
+		printCompleted = false;
+		printerAborded = false;
+		printTimeSeconds = -1;
+		setPrinting(true);
+		setPrintStarted(LocalDateTime.now().toString());
+		setPercentComplete(-1);
+		setPrintFile(file);
+	}
+	public void startSDPrinting(FileList file) {
+		printerShutdownInProgress = false;
+		printCompleted = false;
+		printerAborded = false;
+		printTimeSeconds = -1;
+		setPrinting(true);
+		setPrintStarted(LocalDateTime.now().toString());
+		setPercentComplete(0);
+		setPrintFile(file);		
+	}
 	
 	public void setPrintFinished() {
-		setPrintTimeSeconds(0);
+		printerAborded = false;
+		setPrintTimeSeconds(-1);
 		setPrinting(false);
-		setPrinterBusy(false);
 		printCompleted = true;
 		setPrintStarted(null);
-		setPercentComplete(100);
-		
+		setPercentComplete(100);		
 	}
 	
 	public void printAborded() {
-		setPrintTimeSeconds(0);
+		printerShutdownInProgress = false;
+		printerAborded = true;
+		setPrintTimeSeconds(-1);
 		setPrinting(false);
-		setPrinterBusy(false);
-		printCompleted = true;
+		printCompleted = false;
+		setPrintStarted(null);
+	}
+
+	public boolean isPrinterConnected() {
+		return printerConnected;
+	}
+
+	public void setPrinterConnected(boolean printerConnected) {
+		this.printerConnected = printerConnected;
+	}
+
+	public boolean isPrinterAborded() {
+		return printerAborded;
+	}
+
+	public void setPrinterAborded(boolean printerAborded) {
+		this.printerAborded = printerAborded;
+	}
+
+	public boolean isAutoPrinterShutdown() {
+		return autoPrinterShutdown;
+	}
+
+	public void setAutoPrinterShutdown(boolean autoPrinterShutdown) {
+		this.autoPrinterShutdown = autoPrinterShutdown;
+	}
+
+	public boolean isPrinterShutdownInProgress() {
+		return printerShutdownInProgress;
+	}
+
+	public void setPrinterShutdownInProgress(boolean printerShutdownInProgress) {
+		this.printerShutdownInProgress = printerShutdownInProgress;
 	}
 
 	@Override
 	public String toString() {
 		return "PrintServiceData [printFile=" + printFile + ", listFiles=" + listFiles + ", printing=" + printing
-				+ ", printTimeSeconds=" + printTimeSeconds + ", printStarted=" + printStarted + ", bedTemp=" + bedTemp
-				+ ", bedTempMax=" + bedTempMax + ", nozzleTemp=" + nozzleTemp + ", nozzleTempMax=" + nozzleTempMax
-				+ ", printerBusy=" + printerBusy + "]";
+				+ ", printCompleted=" + printCompleted + ", printerConnected=" + printerConnected + ", printerAborded="
+				+ printerAborded + ", autoPrinterShutdown=" + autoPrinterShutdown + ", printerShutdownInProgress="
+				+ printerShutdownInProgress + ", printTimeSeconds=" + printTimeSeconds + ", printStarted="
+				+ printStarted + ", bedTemp=" + bedTemp + ", bedTempMax=" + bedTempMax + ", nozzleTemp=" + nozzleTemp
+				+ ", nozzleTempMax=" + nozzleTempMax + ", percentComplete=" + percentComplete + ", extrFanOnAuto="
+				+ extrFanOnAuto + ", extracFanRPM=" + extracFanRPM + ", extracFanSpeed=" + extracFanSpeed
+				+ ", temperature=" + temperature + ", lightOn=" + lightOn + ", airQualityCo2=" + airQualityCo2
+				+ ", airQualityVoc=" + airQualityVoc + "]";
 	}
 
 
-
-	
 
 }

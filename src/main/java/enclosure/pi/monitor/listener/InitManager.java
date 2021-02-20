@@ -58,7 +58,7 @@ public class InitManager implements ServletContextListener    {
 				
 				ArduinoHandler ah = ArduinoHandler.getInstance();
 				//
-				ah.openSerialConnection();
+//				ah.openSerialConnection();
 
 				//wait until arduino ready
 				int cnt = 0;

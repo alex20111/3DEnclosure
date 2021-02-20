@@ -23,4 +23,7 @@ public interface Command {
 	//For monitoring / all sensors
 	public static final String ALL_SESNORS = "m";
 	
+	//For monitoring / all sensors
+	public static final String PRINTER_POWER = "p";
+	
 }

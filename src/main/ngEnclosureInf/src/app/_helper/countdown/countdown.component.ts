@@ -15,7 +15,7 @@ export class CountdownComponent implements OnInit,  OnDestroy , OnChanges{
   timerStartDate!: Date;
   private subscription!: Subscription;
   
-private savedTimer: Date;
+   private savedTimer: Date;
 
   public dateNow = new Date();
   // public dDay = new Date('Jan 01 2021 00:00:00');
@@ -67,7 +67,6 @@ private allocateTimeUnits (timeDifference: number) {
            if (this.minutesToDday === -1 && this.hoursToDday === -1 && this.daysToDday === -1 && this.secondsToDday < 0){
                    let printFinish = new PrintMessage();
              printFinish.finished = true;
-            this.printService.sendPrintMessage(printFinish);
             this.subscription.unsubscribe();            
            }
 
@@ -76,7 +75,9 @@ private allocateTimeUnits (timeDifference: number) {
   }
 
  ngOnDestroy() {
+   if ( this.subscription){
     this.subscription.unsubscribe();
+   }
  }
 
 }
