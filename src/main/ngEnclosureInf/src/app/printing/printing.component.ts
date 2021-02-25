@@ -71,7 +71,7 @@ export class PrintingComponent implements OnInit {
 
        if (fileToPrint) {
 
-        console.log("SENT TO PRINTTTTTT " , print); 
+        // console.log("SENT TO PRINTTTTTT " , print); 
 
         this.printService.startPrinting(print).subscribe(result => {
           console.log("Start print result message: ", result)

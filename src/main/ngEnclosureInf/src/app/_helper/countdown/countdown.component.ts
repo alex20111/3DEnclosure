@@ -64,9 +64,7 @@ private allocateTimeUnits (timeDifference: number) {
      this.subscription = interval(1000)
          .subscribe(x => { 
            this.getTimeDifference(); 
-           if (this.minutesToDday === -1 && this.hoursToDday === -1 && this.daysToDday === -1 && this.secondsToDday < 0){
-                   let printFinish = new PrintMessage();
-             printFinish.finished = true;
+           if (this.minutesToDday === -1  && this.secondsToDday < 0){
             this.subscription.unsubscribe();            
            }
 

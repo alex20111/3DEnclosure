@@ -228,6 +228,9 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
             } else {
               this.printMessage = `${hours} h ${minutes} m ${seconds} s`;
             }
+            if (data.autoPrinterShutdown){
+              this.printMessage = this.printMessage + " (Auto Shutdown)";
+            }
           });
         }
       } else if (data.printCompleted) { //print complete
@@ -238,6 +241,9 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
         } else {
           this.printMessage = "Print Completed. ";
+          this.coolingDelay = false;
+          this.countdownToDate = null;
+          this.session.removeSharedObject(Constants.PRINTER_COOLDOWN_TIMER);
         }
         if (this.printerSubscription) {
           this.printerSubscription.unsubscribe();

@@ -397,7 +397,7 @@ public class PrinterHandler {
 
 	private void sendCommand(String command, int wait) throws IOException, InterruptedException {
 		outputs.append("Writing: " + command + "\n");
-				logger.debug("Writing: " + command );
+//				logger.debug("Writing: " + command );
 		String s2cmd = command + "\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
@@ -498,7 +498,7 @@ public class PrinterHandler {
 									String line;
 									while( (line = br.readLine() ) != null) {
 										outputs.append("Response: " + line + "\n");
-																				logger.debug("Response: " + line );
+//																				logger.debug("Response: " + line );
 										if (line.startsWith("ok") ) {
 											synchronized (monitor) {
 												monitor.notifyAll();

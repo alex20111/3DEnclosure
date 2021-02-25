@@ -15,12 +15,9 @@ TODO:
 	//add new component that verify if printer is active .. through websocket!!!!!!!!??
  
 printer handle errors (Rteurn to start and end).
-install new LEDs in the enclosure.
+Add webcam to detect motion.. if no motion, then stop printer.. 
 when stopping a print , the underling thread is not cancelled and the print SMS is sent.
 monitor printer position to see if it's mooving or if it's responding to avoid stall and crash that lets the printer working but not working.
-
-Add new Arduino relay to turn off printer after print is finished or emergency.
-dashboard fan color: red when stopped , green when running
 
 
 Test:
@@ -30,6 +27,8 @@ change pi4j serial by Jserialcomm
 
 
 Done:
+Add new Arduino relay to turn off printer after print is finished or emergency.
+install new LEDs in the enclosure.
 new arduino code to handle multiple serial returns.. <ss> <sda>
 Update arduino code to control new fan
 Connect printer to raspberry pi. Create usb cable.

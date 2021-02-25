@@ -78,15 +78,15 @@
 
 
             <div class="col-6 " style="padding-left: 5px;" (click)="connectPrinter()">
-              <div class="jumbotron card card-block mr-2" style="color: white;border-color: white; ; min-height: 76px; ">
+              <div class="jumbotron card card-block mr-2 " style="color: white;border-color: white; ; min-height: 76px;  ">
 
                 <img class="images" [src]="printerImg" width="48" height="48" class="center" />
-                <div *ngIf="coolingDelay"  class="text-block">   
-                  
-                  <app-countdown [timerStartDate]="countdownToDate"></app-countdown>               
+                <div *ngIf="coolingDelay" class="text-block " >   
+            
+                   <app-countdown [timerStartDate]="countdownToDate"></app-countdown>             
                 
-                 </div>
-                <div  *ngIf="printerOnOffLoading" class=" spinner-block spinner-border spinner-border-sm "></div>
+                 </div>  <!-- -->
+                <div *ngIf="printerOnOffLoading" class=" spinner-block spinner-border spinner-border-sm "></div>
               </div>
             </div>
           </div>

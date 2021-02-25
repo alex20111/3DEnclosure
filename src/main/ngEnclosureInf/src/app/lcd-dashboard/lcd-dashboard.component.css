@@ -10,10 +10,11 @@
   /* Bottom right text */
 .text-block {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
     color: white;
-
+    left: 0;
+    text-align:center;
+    top: 30px;
+    width: 100%
     
   }
   .spinner-block {

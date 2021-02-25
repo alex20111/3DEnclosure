@@ -69,7 +69,17 @@ public class WebSocketHandler {
 	}
 	public void processOnClose(Session session) {
 		try {
-			UserSession us = userSessions.stream().filter(u -> u.getSession().getId() == session.getId()).findAny().orElse(null);
+			
+//			StringBuilder s = new StringBuilder();
+//			for(UserSession ss : userSessions) {
+//				s.append(" ID: " + ss.getSession().getId() + " - " );
+//				
+//			}
+//			
+//			logger.info("Closing session: " + session.getId() + " Current: " + s.toString());
+			
+			
+			UserSession us = userSessions.stream().filter(u -> u.getSession().getId().equalsIgnoreCase(session.getId())).findAny().orElse(null);
 
 			if (us != null) {
 				logger.info("Closing removing session: " + session.getId() + " Size: " + userSessions.size());
