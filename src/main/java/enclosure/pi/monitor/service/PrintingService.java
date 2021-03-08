@@ -223,6 +223,10 @@ public class PrintingService {
 		
 		return Response.status(status).entity(msg).build();	
 	}
+	/**
+	 * Stop the automatic shutdown of the printer 
+	 * @return
+	 */
 	@Path("stopShutdown")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)

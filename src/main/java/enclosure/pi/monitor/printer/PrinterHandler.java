@@ -60,6 +60,9 @@ public class PrinterHandler {
 	private boolean sdCardReady = false;
 	private List<String> fileList = new ArrayList<>();
 	private LocalDateTime prevSdCardReading = null;
+	
+	private LocalDateTime lastSerialHeartBeat = null; //last time that we got a serial return..
+	private LocalDateTime lastPrinterVerification = null;
 
 	private PrintServiceData printData = new PrintServiceData();
 
@@ -108,7 +111,7 @@ public class PrinterHandler {
 
 							if (portOpen) {
 								logger.info("Connected to printer");
-								printData.setPrinterConnected(true);
+								printData.setPrinterConnected(true); 
 								in = comPort.getInputStream();
 
 								Thread.sleep(6000);
@@ -409,6 +412,18 @@ public class PrinterHandler {
 		}
 	}
 	private boolean verifyPrinterConnected() { 	
+		
+		
+		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - lastPrinterVerification: " + lastPrinterVerification);
+		
+		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
+		if (lastSerialHeartBeat != null && 
+				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
+						lastPrinterVerification.minusSeconds(15).isBefore(lastSerialHeartBeat)	)		){
+			lastPrinterVerification = LocalDateTime.now();
+			return true;
+		}	
+		
 		String s2cmd = "M111\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
@@ -418,7 +433,7 @@ public class PrinterHandler {
 
 		try {
 			synchronized (monitor) {
-				monitor.wait(5500);
+				monitor.wait(10000);
 			}
 
 			if(LocalDateTime.now().isAfter(breakNowFuture)) {
@@ -431,6 +446,7 @@ public class PrinterHandler {
 			printData.setPrinterConnected(false);
 			answer = false;
 		}
+		lastPrinterVerification = LocalDateTime.now();
 		return answer;
 	}
 
@@ -497,8 +513,10 @@ public class PrinterHandler {
 									boolean readingFileList = false;
 									String line;
 									while( (line = br.readLine() ) != null) {
+										lastSerialHeartBeat = LocalDateTime.now();
+										
 										outputs.append("Response: " + line + "\n");
-//																				logger.debug("Response: " + line );
+																				logger.debug("Response: " + line );
 										if (line.startsWith("ok") ) {
 											synchronized (monitor) {
 												monitor.notifyAll();

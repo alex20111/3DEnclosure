@@ -62,29 +62,33 @@ export class PrintingComponent implements OnInit {
     if (this.printUiData) {
 
       const selectedFileName = this.printForm.value.frm_file_to_print;
-      
+
       const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
 
       let print = new PrintServiceData();
-    print.printFile = fileToPrint;   
-    print.autoPrinterShutdown = this.printForm.value.frm_auto_power_off;
+      print.printFile = fileToPrint;
+      print.autoPrinterShutdown = this.printForm.value.frm_auto_power_off;
 
-       if (fileToPrint) {
+      if (fileToPrint) {
 
         // console.log("SENT TO PRINTTTTTT " , print); 
 
+        this.loading = true;
         this.printService.startPrinting(print).subscribe(result => {
           console.log("Start print result message: ", result)
+          this.loading = false;
           if (result.messageType !== "SUCCESS") {
             this.error = result.message;
           } else {
             this.printUiData.printing = true;
             this.router.navigate(['/']);
           }
+
         },
           err => {
             console.log(err);
             this.error = err.message + ' ' + err.error;
+            this.loading = false;
           })
       } else {
         this.error = "Please select a file to print";
