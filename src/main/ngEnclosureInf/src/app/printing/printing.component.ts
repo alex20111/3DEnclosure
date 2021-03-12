@@ -23,6 +23,8 @@ export class PrintingComponent implements OnInit {
   printUiData?: PrintServiceData;
   loading = false;
   stoppingLoading = false;
+  pausePrintLoading: boolean = false;
+  printPauseBtnTxt: string = "Pause";
 
   faUpload = faUpload;
 
@@ -41,13 +43,20 @@ export class PrintingComponent implements OnInit {
     this.loading = true;
     this.printService.printUiInitInfo().subscribe(data => {
       console.log("Print data: ", data);
+
       this.printUiData = data;
-      this.printForm.setValue({
-        frm_file_to_print: this.printUiData.listFiles[0].fileName,
-        frm_auto_power_off: this.printUiData.autoPrinterShutdown
-      });
+      if (data.listFiles && data.listFiles.length > 0) {
+        this.printForm.setValue({
+          frm_file_to_print: this.printUiData.listFiles[0].fileName,
+          frm_auto_power_off: this.printUiData.autoPrinterShutdown
+        });
+      }
 
       this.loading = false;
+
+      if (this.printUiData.printPaused){
+        this.printPauseBtnTxt = "Resume";
+      }
 
     },
       err => {
@@ -63,38 +72,42 @@ export class PrintingComponent implements OnInit {
 
       const selectedFileName = this.printForm.value.frm_file_to_print;
 
-      const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
+      if (selectedFileName) {
 
-      let print = new PrintServiceData();
-      print.printFile = fileToPrint;
-      print.autoPrinterShutdown = this.printForm.value.frm_auto_power_off;
+        const fileToPrint: GcodeFile = this.printUiData.listFiles.filter(x => x.fileName === selectedFileName)[0];
 
-      if (fileToPrint) {
+        let print = new PrintServiceData();
+        print.printFile = fileToPrint;
+        print.autoPrinterShutdown = this.printForm.value.frm_auto_power_off;
 
-        // console.log("SENT TO PRINTTTTTT " , print); 
+        if (fileToPrint) {
 
-        this.loading = true;
-        this.printService.startPrinting(print).subscribe(result => {
-          console.log("Start print result message: ", result)
-          this.loading = false;
-          if (result.messageType !== "SUCCESS") {
-            this.error = result.message;
-          } else {
-            this.printUiData.printing = true;
-            this.router.navigate(['/']);
-          }
+          // console.log("SENT TO PRINTTTTTT " , print); 
 
-        },
-          err => {
-            console.log(err);
-            this.error = err.message + ' ' + err.error;
+          this.loading = true;
+          this.printService.startPrinting(print).subscribe(result => {
+            console.log("Start print result message: ", result)
             this.loading = false;
-          })
-      } else {
-        this.error = "Please select a file to print";
+            if (result.messageType !== "SUCCESS") {
+              this.error = result.message;
+            } else {
+              this.printUiData.printing = true;
+              this.router.navigate(['/']);
+            }
+
+          },
+            err => {
+              console.log(err);
+              this.error = err.message + ' ' + err.error;
+              this.loading = false;
+            })
+        } else {
+          this.error = "Please select a file to print";
+        }
+      }else{
+        this.error = "Please upload a file ";
       }
     }
-
   }
 
   stop() {
@@ -113,6 +126,29 @@ export class PrintingComponent implements OnInit {
       this.stoppingLoading = false;
     });
 
+  }
+
+  pausePrint() {
+    this.pausePrintLoading = true;
+
+    let pauseAction = "pause";
+    if (this.printUiData.printPaused) {
+      pauseAction = "resume";
+    }
+    this.printService.pausePrint(pauseAction).subscribe(result => {
+      this.pausePrintLoading = false;
+      if (pauseAction === "pause") {
+        this.printUiData.printPaused = true;
+        this.printPauseBtnTxt = "Resume";
+      } else {
+        this.printUiData.printPaused = false;
+        this.printPauseBtnTxt = "Pause";
+      }
+    },
+      err => {
+        this.pausePrintLoading = false;
+        this.error = err.message + ' ' + err.error.error;
+      });
   }
 
 

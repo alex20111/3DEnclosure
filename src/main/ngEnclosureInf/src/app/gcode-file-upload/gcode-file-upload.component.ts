@@ -116,14 +116,14 @@ export class GcodeFileUploadComponent implements OnInit {
     this.fileService.fileUpload(formData).subscribe((event: HttpEvent<any>) => {
       switch (event.type) {
         case HttpEventType.Sent:
-          console.log('Request has been made!');
+          // console.log('Request has been made!');
           break;
         case HttpEventType.ResponseHeader:
-          console.log('Response header has been received!');
+          // console.log('Response header has been received!');
           break;
         case HttpEventType.UploadProgress:
           const progress = Math.round(event.loaded / event.total * 100);
-          console.log(`Uploaded! ${progress}%`);
+          // console.log(`Uploaded! ${progress}%`);
           this.files[0].progress = progress;
           break;
         case HttpEventType.Response:

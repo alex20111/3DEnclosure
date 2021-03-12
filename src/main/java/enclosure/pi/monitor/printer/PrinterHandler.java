@@ -41,14 +41,15 @@ public class PrinterHandler {
 	private static PrinterHandler printerHandler;
 
 	private Object monitor = new Object();
+	
+	private Object pauseThread = new Object();
+	
 	private SerialPort comPort;
 	private InputStream in;
 
 	private Path filePath;
 	private StringBuilder outputs = new StringBuilder();
-
-	boolean keepingConnectionAlive = true;
-
+	
 	private boolean serialConnStarted = false;
 
 	private boolean forceStopped = false;
@@ -59,12 +60,15 @@ public class PrinterHandler {
 
 	private boolean sdCardReady = false;
 	private List<String> fileList = new ArrayList<>();
-	private LocalDateTime prevSdCardReading = null;
+	private LocalDateTime prevSdCardReading = LocalDateTime.now();
 	
 	private LocalDateTime lastSerialHeartBeat = null; //last time that we got a serial return..
 	private LocalDateTime lastPrinterVerification = null;
 
 	private PrintServiceData printData = new PrintServiceData();
+	
+	//files bytes 
+	private long fileBytesProcessed = -1;
 
 	public static PrinterHandler getInstance() {
 		if (printerHandler == null) {
@@ -92,7 +96,7 @@ public class PrinterHandler {
 			@Override
 			public void run() {
 
-				while(keepingConnectionAlive) {
+				while(true) {
 
 					try {
 						logger.debug("Serial is open: " + (comPort != null ? comPort.isOpen() : "false") );
@@ -126,13 +130,13 @@ public class PrinterHandler {
 
 						}else if (comPort != null && comPort.isOpen() && !mode.isPrinting()) {
 							verifyPrinterConnected();
-						}else if (comPort != null && comPort.isOpen() && mode == PrintMode.SD_PRINTING ) {
+						}else if (comPort != null &&
+									comPort.isOpen() && mode == PrintMode.SD_PRINTING && 
+									printData.isPrintingModel() && 
+									!printData.isPrintPaused()) {
 
-							if (prevSdCardReading == null) {
-								prevSdCardReading = LocalDateTime.now().plusMinutes(5);
-							}
-
-							if (LocalDateTime.now().isAfter(prevSdCardReading)) {
+	
+							if (prevSdCardReading != null && LocalDateTime.now().isAfter(prevSdCardReading)) {
 								prevSdCardReading.plusSeconds(30);
 								//send periodic file status when SD is printing.
 								sendCommand("M27", 0); //get file remaining byte to calculare % every 30 sec
@@ -175,7 +179,8 @@ public class PrinterHandler {
 
 							long totalLength = gcodeFile.length();
 							double lengthPerPercent = 100.0 / totalLength;
-							long readLength = 0;
+//							long readLength = 0;
+							fileBytesProcessed = 0;
 
 							outputs.append("!!! -- Starting print -- !!!\n");
 							try (BufferedReader objReader = new BufferedReader(new FileReader(gcodeFile))){
@@ -185,8 +190,8 @@ public class PrinterHandler {
 
 									//calculate percent complete
 									int len = str.length() + 2;
-									readLength += len;
-									printData.setPercentComplete((int)Math.round(readLength * lengthPerPercent));									
+									fileBytesProcessed += len;
+									printData.setPercentComplete((int)Math.round(fileBytesProcessed * lengthPerPercent));									
 
 									if (!str.startsWith(";") && str.trim().length() > 0) {
 
@@ -210,6 +215,12 @@ public class PrinterHandler {
 									if (forceStopped) {
 										throw new InterruptedException("Forced interrupted by user");
 									}
+									if (printData.isPrintPaused()) { //pause the print..
+										synchronized (pauseThread) {
+											pauseThread.wait();
+										}
+									}
+									
 								}
 
 								finalizePiPrinting();
@@ -251,6 +262,7 @@ public class PrinterHandler {
 			if (!mode.isPrinting()) {
 
 				try {
+					fileBytesProcessed = 0;
 					//					sendCommand("M111 S1", true);
 					//select file
 					sendCommand("M23 " + file.getFileName(), 20000); //select file name
@@ -397,6 +409,34 @@ public class PrinterHandler {
 		}
 	}
 
+	//get the number of bytes processed by the printer for the file.
+	public long getFileBytesProcessed() {
+		return fileBytesProcessed;
+	}
+	public void pausePrint() throws IOException, InterruptedException {
+		if (isPrinting()) {
+			if (mode == PrintMode.SD_PRINTING) {
+				sendCommand("M25", 5000);
+				printData.setPrintPaused(true);
+			}else {
+				printData.setPrintPaused(true);		
+			}
+		}
+	}
+	public void resumePrint() throws IOException, InterruptedException {
+		if (isPrinting()) {
+			if (mode == PrintMode.SD_PRINTING) {
+				sendCommand("M108", 5000);
+				printData.setPrintPaused(false);
+			}else {
+				printData.setPrintPaused(false);
+				synchronized (pauseThread) {
+					pauseThread.notifyAll();
+				}
+				
+			}
+		}
+	}
 
 	private void sendCommand(String command, int wait) throws IOException, InterruptedException {
 		outputs.append("Writing: " + command + "\n");
@@ -417,7 +457,7 @@ public class PrinterHandler {
 		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - lastPrinterVerification: " + lastPrinterVerification);
 		
 		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
-		if (lastSerialHeartBeat != null && 
+		if (lastSerialHeartBeat != null && lastPrinterVerification != null && 
 				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
 						lastPrinterVerification.minusSeconds(15).isBefore(lastSerialHeartBeat)	)		){
 			lastPrinterVerification = LocalDateTime.now();
@@ -475,6 +515,7 @@ public class PrinterHandler {
 			String bytesRemaining[] = subStr.split("/");		
 
 			double completed = Double.parseDouble(bytesRemaining[0]);
+			fileBytesProcessed = (long)completed;
 			double total = Double.parseDouble(bytesRemaining[1]);
 			double percentDbl = (completed / total) * 100;
 			int percent = (int)percentDbl;
@@ -516,7 +557,7 @@ public class PrinterHandler {
 										lastSerialHeartBeat = LocalDateTime.now();
 										
 										outputs.append("Response: " + line + "\n");
-																				logger.debug("Response: " + line );
+//																				logger.debug("Response: " + line );
 										if (line.startsWith("ok") ) {
 											synchronized (monitor) {
 												monitor.notifyAll();
@@ -537,6 +578,10 @@ public class PrinterHandler {
 											sendPercentCompleted(line);
 										}else if (line.contains("Done printing file") && mode == PrintMode.SD_PRINTING) {
 											finalizeSdPrinting();
+										}else if (line.contains("Printing Started")) {
+											printData.setPrintingModel(true);
+										}else if (line.contains("Printing finished")) {
+											printData.setPrintingModel(false);
 										}
 									}
 								}
@@ -583,7 +628,7 @@ public class PrinterHandler {
 		ThreadManager tm = ThreadManager.getInstance();
 		tm.sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
 		
-		if (printData.isAutoPrinterShutdown()) {  //TODO 
+		if (printData.isAutoPrinterShutdown()) { 
 			tm.shutdownPrinter(5, TimeUnit.MINUTES);
 		}
 		writeOutputs();
@@ -602,4 +647,8 @@ public class PrinterHandler {
 		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
 		
 	}
+
 }
+
+// Printing Started
+//M118 Printing finished

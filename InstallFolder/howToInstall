@@ -1,0 +1,24 @@
+Download arm 32 hard float from oracle website:
+https://www.oracle.com/ca-en/java/technologies/javase/javase-jdk8-downloads.html
+	install:
+		https://www.raspberrypi.org/forums/viewtopic.php?f=91&t=231460
+
+Create folders:
+/opt/jetty
+/opt/jetty/gcode
+/opt/jetty/welcomeHtml
+
+install jetty:
+jetty-distribution-9.4.35.v20201120.tar.gz  in the jetty folder
+	- tar xf jetty-distribution-9.4.35.v20201120.tar.gz
+	note: if jetty version change, change the folder in the "startJetty.sh"
+
+
+How to run program on starttup:
+https://learn.sparkfun.com/tutorials/how-to-run-a-raspberry-pi-program-on-startup/all
+	-move startJetty.sh to the /opt/jetty folder
+	-edit : sudo nano /etc/rc.local
+	- add /opt/jetty/startJetty.sh & after the "fi"  save & close
+  
+  
+  To come: start chrome and load the page.

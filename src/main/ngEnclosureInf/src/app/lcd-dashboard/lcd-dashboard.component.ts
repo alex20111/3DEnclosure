@@ -1,3 +1,4 @@
+import { Message } from './../_model/Message';
 import { SessionService } from './../services/session.service';
 import { PiWebSocketService, SocketMessage } from './../services/pi-web-socket.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
@@ -28,10 +29,14 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   error: string = '';
   message: string = '';
   printMessage: string;
+  printMsgAdd: string = ""; //addon to the print message
   printData: PrintServiceData = new PrintServiceData();
 
   // dashBoardTimer: Subscription | undefined;
   printerSubscription: Subscription;
+
+  pausePrintLoading: boolean = false;
+  printPauseBtnTxt: string = "Pause";
 
   //icons
   faThermometerHalf = faThermometerHalf;
@@ -122,7 +127,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
       let actionRequest = true;
       let action = "turnOn";
-    
+
 
       if (this.printData.printerConnected) {
         if (confirm("Turn off printer? ")) {
@@ -131,7 +136,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         } else {
           actionRequest = false;
         }
-      }else{
+      } else {
         this.printerOnOffLoading = true;
       }
 
@@ -185,6 +190,29 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  pausePrint() {
+    this.pausePrintLoading = true;
+
+    let pauseAction = "pause";
+    if (this.printData.printPaused) {
+      pauseAction = "resume";
+    }
+    this.printService.pausePrint(pauseAction).subscribe(result => {
+      this.pausePrintLoading = false;
+      if (pauseAction === "pause") {
+        this.printData.printPaused = true;
+        this.printPauseBtnTxt = "Resume";
+      } else {
+        this.printData.printPaused = false;
+        this.printPauseBtnTxt = "Pause";
+      }
+    },
+      err => {
+        this.pausePrintLoading = false;
+        this.error = err.message + ' ' + err.error.error;
+      });
+  }
+
   //handle websocket data
   webSocketData(message: SocketMessage) {
     if (message.dataType === "PRINT_DATA"
@@ -203,6 +231,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
           if (data.printTimeSeconds > 0) {
             totPrintTime = this.getTotalTime(data.printTimeSeconds);
           }
+
+          this.printMsgAdd = " - Heating up printer";
           this.printerSubscription = interval(1000).subscribe(() => {
             let totalSeconds = Math.floor(
               (new Date().getTime() - printStartedDate.getTime()) / 1000
@@ -224,14 +254,19 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
             seconds = totalSeconds;
 
             if (totPrintTime) { //if we got a time to complete in seconds
-              this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}`;
+              this.printMessage = `${hours} h ${minutes} m ${seconds} s / ${totPrintTime}` + this.printMsgAdd;
             } else {
-              this.printMessage = `${hours} h ${minutes} m ${seconds} s`;
+              this.printMessage = `${hours} h ${minutes} m ${seconds} s` + this.printMsgAdd;
             }
-            if (data.autoPrinterShutdown){
+            if (data.autoPrinterShutdown) {
               this.printMessage = this.printMessage + " (Auto Shutdown)";
             }
           });
+        } else if (data.printingModel && !data.printPaused) {
+          this.printMsgAdd = " - printing ";
+        } else if (data.printingModel && data.printPaused) {
+          this.printMsgAdd = " - printing paused ";
+          this.printPauseBtnTxt = "Resume";
         }
       } else if (data.printCompleted) { //print complete
         if (data.printerShutdownInProgress) {
@@ -299,10 +334,10 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     return `${hours} h ${minutes} m ${seconds} s`;
   }
 
-  private handlePrinterCooldown(){
+  private handlePrinterCooldown() {
     if (!this.countdownToDate) {
       this.countdownToDate = this.generalService.getModifiedDate(new Date(), "minute", 5);
-      this.session.putSharedObject(Constants.PRINTER_COOLDOWN_TIMER,this.countdownToDate );
+      this.session.putSharedObject(Constants.PRINTER_COOLDOWN_TIMER, this.countdownToDate);
     }
   }
 }

@@ -16,7 +16,6 @@ public enum SensorsData {
 	    AIR_VOC,
 	    MQ2,
 	    FLAME1,
-	    FLAME2,
-	    FLAME3,
+	    PIR,
 	    POWER_STATUS;
 }

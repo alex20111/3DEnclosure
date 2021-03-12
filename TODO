@@ -20,15 +20,16 @@ when stopping a print , the underling thread is not cancelled and the print SMS 
 monitor printer position to see if it's moving or if it's responding to avoid stall and crash that lets the printer working but not working. ( motion with webcam)
 add shutdown hook to turn off printer if printer is on.
 Output serial data to file manually.. right now i need to turn on back logger to see anything from the serial logs.
+//pause button on process bar
 
 
 Test:
 Test smoke alarm system.
 use the websocket to communicate with the dashboard. remove dashboard (generalservice) ..
-change pi4j serial by Jserialcomm
 
 
 Done:
+change pi4j serial by Jserialcomm
 Add new Arduino relay to turn off printer after print is finished or emergency.
 install new LEDs in the enclosure.
 new arduino code to handle multiple serial returns.. <ss> <sda>

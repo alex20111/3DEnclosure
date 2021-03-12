@@ -9,8 +9,11 @@ public class PrintServiceData {
 	private List<FileList> listFiles;
 	private boolean printing = false;
 	private boolean printCompleted = false;
+	private boolean printerAborded = false;	
+	private boolean printingModel = false; // that the printer is actually started printing the 3d model and not just the heating up.
+	private boolean printPaused = false;
+	
 	private boolean printerConnected = false;
-	private boolean printerAborded = false;
 	private boolean autoPrinterShutdown = false;
 	private boolean printerShutdownInProgress = false;
 	
@@ -164,6 +167,7 @@ public class PrintServiceData {
 		printerShutdownInProgress = false;
 		printCompleted = false;
 		printerAborded = false;
+		printPaused = false;
 		printTimeSeconds = -1;
 		setPrinting(true);
 		setPrintStarted(LocalDateTime.now().toString());
@@ -174,6 +178,7 @@ public class PrintServiceData {
 		printerShutdownInProgress = false;
 		printCompleted = false;
 		printerAborded = false;
+		printPaused = false;
 		printTimeSeconds = -1;
 		setPrinting(true);
 		setPrintStarted(LocalDateTime.now().toString());
@@ -183,19 +188,23 @@ public class PrintServiceData {
 	
 	public void setPrintFinished() {
 		printerAborded = false;
+		printPaused = false;
 		setPrintTimeSeconds(-1);
 		setPrinting(false);
 		printCompleted = true;
 		setPrintStarted(null);
+		printingModel = false;
 		setPercentComplete(100);		
 	}
 	
 	public void printAborded() {
 		printerShutdownInProgress = false;
 		printerAborded = true;
+		printPaused = false;
 		setPrintTimeSeconds(-1);
 		setPrinting(false);
 		printCompleted = false;
+		printingModel = false;
 		setPrintStarted(null);
 	}
 
@@ -229,6 +238,22 @@ public class PrintServiceData {
 
 	public void setPrinterShutdownInProgress(boolean printerShutdownInProgress) {
 		this.printerShutdownInProgress = printerShutdownInProgress;
+	}
+
+	public boolean isPrintingModel() {
+		return printingModel;
+	}
+
+	public void setPrintingModel(boolean printingModel) {
+		this.printingModel = printingModel;
+	}
+
+	public boolean isPrintPaused() {
+		return printPaused;
+	}
+
+	public void setPrintPaused(boolean printPaused) {
+		this.printPaused = printPaused;
 	}
 
 	@Override

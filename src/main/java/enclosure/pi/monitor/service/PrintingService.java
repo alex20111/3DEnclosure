@@ -37,6 +37,10 @@ public class PrintingService {
 
 	private static final Logger logger = LogManager.getLogger(PrintingService.class);
 
+	/**
+	 * Get the print page the information to display
+	 * @return
+	 */
 
 	@Path("initScreen")
 	@GET
@@ -50,9 +54,6 @@ public class PrintingService {
 
 			PrintServiceData psd = ph.getPrintData();
 
-			//			if (psd.isPrinting()) {
-			//				psd.setPrintFile(ph.getPrintData().getPrintFile());
-			//			}
 			List<FileList> fileList = Stream.of(new File(Constants.GCODE_DIR).listFiles())
 					.filter(file -> !file.isDirectory())
 					.map(file -> new FileList(file.getName(), file.length(), true, false))
@@ -74,7 +75,11 @@ public class PrintingService {
 		return Response.ok().build(); //TODO correct
 	}
 
-
+	/**
+	 * Start a print
+	 * @param printData
+	 * @return
+	 */
 	@Path("start")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -135,6 +140,12 @@ public class PrintingService {
 
 		return Response.status(status).entity(msg).build();
 	}
+	/**
+	 * Stop a print in process.
+	 * 
+	 * @param printingData
+	 * @return
+	 */
 	@Path("stop")
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -163,39 +174,44 @@ public class PrintingService {
 
 		return Response.ok().entity(msg).build();
 	}
-	
+
+	/**
+	 * Turn the printer on / off
+	 * @param data
+	 * @return
+	 */
 	@Path("printerOnOff")
 	@POST
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response printerPower(String data) {
-		
+
 		logger.debug("printer on/off: " + data);
-		
+
 		Message msg = new Message(MessageType.ERROR, "Severe error in printerPower");
 		Status status = Status.FORBIDDEN;
 
 		try {
-			
-				
+
+
 			PrinterHandler ph = PrinterHandler.getInstance();
 			PrintServiceData psd = ph.getPrintData();
-			
+
 			if (psd.isPrinting()) {
 				//turn off printing 1st
 				ph.stopPrinting();
 			}
-			
+
 			if ("turnOn".equalsIgnoreCase(data)) {
 				if (psd.isPrinterConnected()) {
 					msg = new Message(MessageType.SUCCESS, "on");
 				}else {
-					
+
 					msg = powerOnPrinter(psd, msg);
 				}
-				
+
 			}else {
-				
+
 				if (psd.getNozzleTemp() > 120) {
 					msg = new Message(MessageType.SUCCESS, "offwithdelay");
 					ThreadManager.getInstance().shutdownPrinter(5, TimeUnit.MINUTES);
@@ -203,7 +219,7 @@ public class PrintingService {
 					PrinterPower printPower = new PrinterPower(PowerAction.OFF);
 					printPower.action();
 					msg = new Message(MessageType.SUCCESS, "off");
-					
+
 					//wait until printer is disconnected
 					int cnt = 0;
 					while(psd.isPrinterConnected() && cnt < 30) {
@@ -212,16 +228,45 @@ public class PrintingService {
 					}
 				}
 			}
-			
+
 			return Response.ok().entity(msg).build();
-			
+
 		}catch(Exception e) {
 			logger.error("Error in printerPower" , e);
 			status = Status.BAD_REQUEST;
 			msg = new Message(MessageType.ERROR, e.getMessage());
 		}
-		
+
 		return Response.status(status).entity(msg).build();	
+	}
+	@Path("pausePrinter")
+	@POST
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response pausePrint(String data) {		
+		logger.debug("Pause/resume printer " + data);
+
+		Message msg = new Message(MessageType.ERROR, "Severe error in pausePrint");
+		Status status = Status.FORBIDDEN;
+
+		PrinterHandler ph = PrinterHandler.getInstance();
+
+		try {
+			if ("pause".equalsIgnoreCase(data)) {
+
+				ph.pausePrint();
+
+			}else if("resume".equalsIgnoreCase(data)) {
+				ph.resumePrint();
+			}
+			status = Status.OK;
+			msg = new Message(MessageType.SUCCESS, "Printer: " + data);
+		}catch(Exception ex) {
+			logger.error("Error in pause print" , ex);
+			msg = new Message(MessageType.ERROR, "Exception in pausePrint");
+		}
+
+		return Response.status(status).entity(msg).build();
 	}
 	/**
 	 * Stop the automatic shutdown of the printer 
@@ -238,15 +283,15 @@ public class PrintingService {
 		Status status = Status.FORBIDDEN;
 
 		try {
-			
+
 			ThreadManager.getInstance().overridePrinterShutdown();
-			
+
 			msg = new Message(MessageType.SUCCESS, "Printer auto shutdown stopped");
-			
+
 			PrintServiceData pds =  PrinterHandler.getInstance().getPrintData();
 			pds.setAutoPrinterShutdown(false);
 			pds.setPrinterShutdownInProgress(false);
-			
+
 			return Response.ok().entity(msg).build();
 
 		}catch (Exception ex) {
@@ -255,6 +300,7 @@ public class PrintingService {
 
 		return Response.status(status).entity(msg).build(); //TODO correct
 	}
+
 
 	private Message powerOnPrinter(PrintServiceData psd, Message msg) throws IllegalStateException, IOException, InterruptedException {
 		PrinterPower printPower = new PrinterPower(PowerAction.ON);
@@ -271,7 +317,7 @@ public class PrintingService {
 		if (!psd.isPrinterConnected()) {
 			msg = new Message(MessageType.WARN, "Could not connect to printer");
 		}
-		
+
 		return msg;
 	}
 

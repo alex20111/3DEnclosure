@@ -17,13 +17,17 @@
   <span *ngIf="printData.percentComplete > -1">
     <ngb-progressbar type="info" [value]="printData.percentComplete">{{printData.percentComplete}}%</ngb-progressbar>
   </span>
+  <span *ngIf="printData.printingModel">
+    <button [disabled]="pausePrintLoading" class="btn btn-primary btn-sm" (click)="pausePrint()">   
+      <span *ngIf="pausePrintLoading" class="spinner-border spinner-border-sm mr-1"></span>
+     {{printPauseBtnTxt}}</button>
+  </span>
   <span *ngIf="coolingDelay">
-    <button [disabled]="coolingDelayLoading" class="btn btn-primary" (click)="cancelShutdown()">   
+    <button [disabled]="coolingDelayLoading" class="btn btn-primary btn-sm" (click)="cancelShutdown()">   
       <span *ngIf="coolingDelayLoading" class="spinner-border spinner-border-sm mr-1"></span>
       Cancel shutdown</button>
   </span>
 </p>
-
 
 <div class="ml-3" style="color: white;border-color: white; ">
   <div ngbDropdown class="d-inline-block " placement="bottom-left">

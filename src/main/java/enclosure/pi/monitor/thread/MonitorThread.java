@@ -49,6 +49,11 @@ public class MonitorThread implements Runnable{
 	LocalDateTime stopFanTimer = null;
 	boolean autoStarted = false;
 	
+	//
+	private long prevFileReadingSize = 0;
+	private LocalDateTime nextMvToBeSent = null;
+	private int shutDownCnt  = 0; //count to have the printer shutdown if no movement detected. 
+	
 	private PrinterHandler ph;
 
 	public MonitorThread(int delay) {
@@ -88,6 +93,9 @@ public class MonitorThread implements Runnable{
 				
 				cfg = (Config)sd.getSharedObject(Constants.CONFIG);
 				
+				//verify if printer is moving and printing the model
+				detectPrinterMovement(sd);
+				
 				//send info to dashboard
 				sendDashboardInfo(sd, cfg);
 				
@@ -105,6 +113,51 @@ public class MonitorThread implements Runnable{
 				this.keepMonitoring = false;
 			}
 
+		}
+	}
+	private void detectPrinterMovement(SharedData sd) {
+		PrintServiceData pd = ph.getPrintData();
+		
+		if (pd.isPrintingModel()) {
+		 //add code from PIR //PIR turn off after 33 sec
+			try {
+				int pir = Integer.parseInt(sd.getSensorAsString(SensorsData.PIR));
+				
+				//TODO Update screen also - could it be overriden by screen?  maybe in config
+				if (pir == 0 && prevFileReadingSize ==  ph.getFileBytesProcessed()) { //) means no movment
+					logger.info("Problem, no movement detected and file hasen't process any new bytes");
+					LocalDateTime now = LocalDateTime.now();
+					
+					if (nextMvToBeSent == null || now.isAfter(nextMvToBeSent)) {
+						SendSMSThread msg = new SendSMSThread("No Movment", "No movement detected " + now);
+						ThreadManager.getInstance().sendSmsMessage(msg);
+						nextMvToBeSent = now.plusMinutes(5);
+						shutDownCnt ++;
+						if (shutDownCnt == 5) {
+							SendSMSThread msg2 = new SendSMSThread("No Movment, Shutting down", "more than 20 min, shutting down printer " + now);
+							ThreadManager.getInstance().sendSmsMessage(msg2);
+							PrinterPower power = new PrinterPower(PowerAction.OFF);
+							try {
+								power.action();
+							} catch (IllegalStateException | IOException e) {
+								logger.error("error while shutting down power", e);
+							}
+						}
+					}
+				}else if (pir == 0 && ph.getFileBytesProcessed() > prevFileReadingSize   ){
+					logger.info("Problem, no movement detected but file says that it has process new bytes: prevFileReadingSize: " + prevFileReadingSize + " getFileBytesProcessed: " + ph.getFileBytesProcessed() );
+				}
+				
+				prevFileReadingSize = ph.getFileBytesProcessed();
+				
+			}catch(NumberFormatException nfx) {
+				logger.debug("Could not convert PIR sensor data" );
+			}
+		}else if (prevFileReadingSize > 0){
+			prevFileReadingSize = 0;
+			nextMvToBeSent = null;
+			shutDownCnt = 0;
+			
 		}
 	}
 	private void processExtractorControl(SharedData sd, Config cfg) {

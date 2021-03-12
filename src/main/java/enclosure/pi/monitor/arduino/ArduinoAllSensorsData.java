@@ -49,7 +49,7 @@ public class ArduinoAllSensorsData implements Command{
 			sd.putSensor(SensorsData.AIR_VOC, split[3]);
 			sd.putSensor(SensorsData.MQ2, split[4]);
 			sd.putSensor(SensorsData.FLAME1, split[5]);
-//			sd.putSensor(SensorsData.FLAME2, split[6]);
+			sd.putSensor(SensorsData.PIR, split[6]);
 
 		}
 

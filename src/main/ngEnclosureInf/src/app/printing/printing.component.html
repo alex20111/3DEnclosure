@@ -1,11 +1,12 @@
-<p *ngIf="error">
-  <ngb-alert type="danger" (closed)="error ='' ">
-    {{error}}
-  </ngb-alert>
-</p>
+
 <div class="container">
   <div class="row">
     <div class="col-12 " >
+      <p *ngIf="error">
+        <ngb-alert type="danger" (closed)="error ='' ">
+          {{error}}
+        </ngb-alert>
+      </p>
       <div class="jumbotron card card-block mt-1" style="color: white;border-color: white; ">
       <form [formGroup]="printForm">
         <div class="mb-1">
@@ -16,6 +17,8 @@
             <span *ngIf="loading" class="spinner-border spinner-border-sm mr-1"></span>
             <select *ngIf="!loading" class="form-control" formControlName="frm_file_to_print">
               <option *ngFor="let file of printUiData.listFiles" [ngValue]="file.fileName">
+               <span *ngIf="file.fileFromPi" >PI - </span> 
+               <span *ngIf="file.fileFromSd" >SD - </span>
                 {{ file.fileName }}
               </option>
             </select>
@@ -48,8 +51,8 @@
             (click)="start()">Start</Button>
           <button [disabled]="!printUiData?.printing || stoppingLoading" class="btn btn-danger mr-1" (click)="stop()">
             <span *ngIf="stoppingLoading" class="spinner-border spinner-border-sm mr-1"></span> Stop</button>
-            <button [disabled]="!printUiData?.printing || stoppingLoading" class="btn btn-info mr-1" (click)="stop()">
-              <span *ngIf="stoppingLoading" class="spinner-border spinner-border-sm mr-1"></span> Pause</button>
+            <button [disabled]=" !printUiData?.printingModel || stoppingLoading" class="btn btn-info mr-1" (click)="pausePrint()">
+              <span *ngIf="stoppingLoading || pausePrintLoading" class="spinner-border spinner-border-sm mr-1"></span> {{printPauseBtnTxt}}</button>
           <button [disabled]="stoppingLoading" class="btn btn-primary " routerLink="/"> Back </button>
         </div>
       </form>

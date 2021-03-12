@@ -44,6 +44,9 @@ export class PrintService {
     return this.http.get<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/stopShutdown`);
   }
 
+  pausePrint(action: string): Observable<Message>{
+    return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/pausePrinter`, action);
+  }
   
 }
 
@@ -51,11 +54,13 @@ export class PrintServiceData{
   printFile: GcodeFile;
   listFiles?: GcodeFile[] = [];
   printing: boolean = false;
+  printingModel: boolean = false;
   printCompleted: boolean = false;
   printerConnected: boolean = false;
   printerAborded: boolean = false;
   autoPrinterShutdown: boolean = false;
   printerShutdownInProgress: boolean = false;
+  printPaused: boolean = false;
 
 	//time/date display
    printTimeSeconds: number = -1;
