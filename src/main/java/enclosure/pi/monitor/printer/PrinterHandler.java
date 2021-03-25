@@ -578,7 +578,7 @@ public class PrinterHandler {
 											sendPercentCompleted(line);
 										}else if (line.contains("Done printing file") && mode == PrintMode.SD_PRINTING) {
 											finalizeSdPrinting();
-										}else if (line.contains("Printing Started")) {
+										}else if (line.contains("Printing Started") && printData.isPrinting()) {
 											printData.setPrintingModel(true);
 										}else if (line.contains("Printing finished")) {
 											printData.setPrintingModel(false);

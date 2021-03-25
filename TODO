@@ -1,3 +1,4 @@
+--- > update Pi with new code
 
 The angular.json: "outputPath": "../webapp" to be the root OR "outputPath": "../webapp/ngApp/"  to be in Http://localhost:8080/ngApp
 the pom.xml <argument>--base-href=/</argument> to be root OR <argument>--base-href=/ngApp</argument> to be in Http://localhost:8080/ngApp
@@ -15,17 +16,21 @@ TODO:
 	//add new component that verify if printer is active .. through websocket!!!!!!!!??
  
 printer handle errors (Rteurn to start and end).
-Add webcam to detect motion.. if no motion, then stop printer.. 
+Add webcam 
 when stopping a print , the underling thread is not cancelled and the print SMS is sent.
-monitor printer position to see if it's moving or if it's responding to avoid stall and crash that lets the printer working but not working. ( motion with webcam)
 add shutdown hook to turn off printer if printer is on.
 Output serial data to file manually.. right now i need to turn on back logger to see anything from the serial logs.
-//pause button on process bar
+change screen to add menu on top as nav bar.
+add new control screen to control the X and Y and movements of the printer
+add logs in console only when running local
+get SD card full names.
 
 
 Test:
 Test smoke alarm system.
 use the websocket to communicate with the dashboard. remove dashboard (generalservice) ..
+//pause button on process bar
+monitor printer position to see if it's moving or if it's responding to avoid stall and crash that lets the printer working but not working. ( motion with webcam)
 
 
 Done:

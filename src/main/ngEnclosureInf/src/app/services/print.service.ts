@@ -19,9 +19,7 @@ export class PrintService {
   startPrinting(print: PrintServiceData): Observable<Message>{
     // let print = new PrintServiceData();
     // print.printFile = file;    
-    
-    console.log("Sending:  " , print);
-
+  
     return  this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/start`, print);
   }
 
