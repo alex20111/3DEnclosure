@@ -143,7 +143,7 @@ public class ArduinoHandler {
 	}
 
 	private boolean connectToArduino() {
-		String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.4.2:1.0-port0";
+		String usbPort = "/dev/serial/by-path/platform-3f980000.usb-usb-0:1.3.2:1.0-port0";
 
 
 		arduinoPort = SerialPort.getCommPort(usbPort);

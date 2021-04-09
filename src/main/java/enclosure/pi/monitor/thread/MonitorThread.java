@@ -146,6 +146,9 @@ public class MonitorThread implements Runnable{
 					}
 				}else if (pir == 0 && ph.getFileBytesProcessed() > prevFileReadingSize   ){
 					logger.info("Problem, no movement detected but file says that it has process new bytes: prevFileReadingSize: " + prevFileReadingSize + " getFileBytesProcessed: " + ph.getFileBytesProcessed() );
+				}else if(shutDownCnt > 0) {
+					logger.info("Movement detected again, resetting variable shutDownCnt: " + shutDownCnt);
+					shutDownCnt = 0;
 				}
 				
 				prevFileReadingSize = ph.getFileBytesProcessed();
