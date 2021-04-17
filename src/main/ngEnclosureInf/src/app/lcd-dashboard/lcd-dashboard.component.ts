@@ -1,6 +1,6 @@
 import { Message } from './../_model/Message';
 import { SessionService } from './../services/session.service';
-import { PiWebSocketService, SocketMessage } from './../services/pi-web-socket.service';
+import { PiWebSocketService, SocketMessage, WsAction } from './../services/pi-web-socket.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
 import { GeneralService } from './../services/general.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
@@ -34,6 +34,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   // dashBoardTimer: Subscription | undefined;
   printerSubscription: Subscription;
+  webSocketSubs: Subscription;
 
   pausePrintLoading: boolean = false;
   printPauseBtnTxt: string = "Pause";
@@ -53,14 +54,23 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
     this.countdownToDate = this.session.getSharedObject(Constants.PRINTER_COOLDOWN_TIMER) as Date;
 
-    this.wsSocket.connect().subscribe(wsReturn => {
-      // console.log("WebSocket result", wsReturn);
+    setTimeout(() => this.initWebSocket(),800);
+    
+  
+  }
 
+  initWebSocket(): void{
+    this.webSocketSubs = this.wsSocket.connect().subscribe(wsReturn => {
       this.webSocketData(wsReturn);
     },
       err => {
         console.log("Web Socket error!!!", err);
       });
+
+   // register 1st
+    const regSocket = new SocketMessage();
+    regSocket.action = "REGISTER";
+    this.wsSocket.sendMessage(regSocket);
 
     //request new print data
     const socketMessage = new SocketMessage();
@@ -98,10 +108,22 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.lightLoading = false;
       }
     );
+
+
   }
 
   ngOnDestroy(): void {
-    this.wsSocket.closeSocket();
+    
+    // this.wsSocket.closeSocket();
+    // const socketMessage = new SocketMessage();
+    // socketMessage.action = WsAction.CLOSE;
+    // // socketMessage.dataType = "PRINT_DATA";  //request print data if any
+    // this.wsSocket.sendMessage(socketMessage);
+
+    if (this.webSocketSubs){
+      this.webSocketSubs.unsubscribe();
+    }
+
     if (this.printerSubscription) {
       this.printerSubscription.unsubscribe();
     }

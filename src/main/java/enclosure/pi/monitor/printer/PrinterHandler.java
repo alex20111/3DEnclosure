@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +50,8 @@ public class PrinterHandler {
 	private InputStream in;
 
 	private Path filePath;
-	private StringBuilder outputs = new StringBuilder();
+	private BlockingQueue<String> serialQueue;
+//	private StringBuilder outputs = new StringBuilder();
 	
 	private boolean serialConnStarted = false;
 
@@ -85,7 +88,7 @@ public class PrinterHandler {
 	private PrinterHandler() { 
 		logger.debug("Starting: PrinterHandler");
 
-		filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+		
 
 		connect();
 	}	
@@ -117,6 +120,11 @@ public class PrinterHandler {
 								logger.info("Connected to printer");
 								printData.setPrinterConnected(true); 
 								in = comPort.getInputStream();
+								
+								filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+								serialQueue = new ArrayBlockingQueue<String>(1000);
+								serialQueue.add("Starting print instance");
+								ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
 
 								Thread.sleep(6000);
 								startListening();
@@ -125,6 +133,8 @@ public class PrinterHandler {
 							else {
 								printData.setPrinterConnected(false);								 
 								serialConnStarted = false;
+								
+								ThreadManager.getInstance().stopPrinterSerialListener();
 								logger.info("Could not connect to printer , retrying in 15 sec. " );
 							}
 
@@ -182,7 +192,7 @@ public class PrinterHandler {
 //							long readLength = 0;
 							fileBytesProcessed = 0;
 
-							outputs.append("!!! -- Starting print -- !!!\n");
+//							outputs.append("!!! -- Starting print -- !!!\n");
 							try (BufferedReader objReader = new BufferedReader(new FileReader(gcodeFile))){
 
 								String str;
@@ -237,7 +247,7 @@ public class PrinterHandler {
 
 							printingThread = null;
 
-							outputs.append("!!! == print thread finished == !!!\n");
+//							outputs.append("!!! == print thread finished == !!!\n");
 							writeOutputs();
 							logger.debug("Printer thread finished");
 						}
@@ -331,7 +341,7 @@ public class PrinterHandler {
 
 	public void stopPrinting() {
 		logger.debug("Stopping printing!!");
-		outputs.append("\n!!! == Stop print == !!!\n");
+//		outputs.append("\n!!! == Stop print == !!!\n");
 		try {
 			if (mode == PrintMode.PI_PRINTING) {
 
@@ -388,7 +398,7 @@ public class PrinterHandler {
 		}catch(InterruptedException | IOException ex) {
 			logger.error("Error in stopping printer", ex);
 		}
-		outputs.append("!!! == Stop print END  == !!!\n");
+//		outputs.append("!!! == Stop print END  == !!!\n");
 		writeOutputs();
 	}
 
@@ -439,8 +449,9 @@ public class PrinterHandler {
 	}
 
 	private void sendCommand(String command, int wait) throws IOException, InterruptedException {
-		outputs.append("Writing: " + command + "\n");
+//		outputs.append("Writing: " + command + "\n");
 //				logger.debug("Writing: " + command );
+		serialQueue.offer("Writing: " + command + "\n");
 		String s2cmd = command + "\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
@@ -527,12 +538,12 @@ public class PrinterHandler {
 	}
 
 	private void writeOutputs() {
-		try {
-			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-			outputs = new StringBuilder();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+//			outputs = new StringBuilder();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	/**
@@ -555,8 +566,7 @@ public class PrinterHandler {
 									String line;
 									while( (line = br.readLine() ) != null) {
 										lastSerialHeartBeat = LocalDateTime.now();
-										
-										outputs.append("Response: " + line + "\n");
+										serialQueue.offer(line);
 //																				logger.debug("Response: " + line );
 										if (line.startsWith("ok") ) {
 											synchronized (monitor) {

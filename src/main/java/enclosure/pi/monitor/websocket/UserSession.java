@@ -3,21 +3,25 @@ package enclosure.pi.monitor.websocket;
 import java.io.IOException;
 import javax.websocket.Session;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class UserSession {
 
 //	private static final Logger logger = LogManager.getLogger(UserSession.class);
 
 	private Session session;
-//	private String userName = "" ;
+	
+	private SessionType type;
+	private boolean serialConsoleMaster = false;
 
 
 	public UserSession() {}
 	public UserSession(Session session) {
 		this.session = session;
+	}
+	
+	public UserSession(Session session, boolean serialConsoleMaster) {
+		this.session = session;
+		this.serialConsoleMaster = serialConsoleMaster;
 	}
 
 
@@ -30,11 +34,22 @@ public class UserSession {
 	public void setSession(Session session) {
 		this.session = session;
 	}
+	public boolean isSerialConsoleMaster() {
+		return serialConsoleMaster;
+	}
+	public void setSerialConsoleMaster(boolean serialConsoleMaster) {
+		this.serialConsoleMaster = serialConsoleMaster;
+	}
 
-//	public String getUserName() {
-//		return userName;
-//	}
-//	public void setUserName(String userName) {
-//		this.userName = userName;
-//	}
+	public SessionType getType() {
+		return type;
+	}
+	public void setType(SessionType type) {
+		this.type = type;
+	}
+
+	enum SessionType{
+		DASHBOARD, TERMINAL;
+	}
+
 }

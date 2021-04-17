@@ -10,6 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jsoniter.JsonIterator;
+import com.jsoniter.output.JsonStream;
+
+import enclosure.pi.monitor.websocket.UserSession.SessionType;
 
 public class WebSocketHandler {
 
@@ -26,19 +29,61 @@ public class WebSocketHandler {
 		SocketMessage msg = JsonIterator.deserialize(message, SocketMessage.class);
 
 		if (msg.getAction() == WsAction.REGISTER) {
-			register(session);
+
+			UserSession s = new UserSession(session);
+			s.setType(SessionType.DASHBOARD);
+			register(s);
+		}else if (msg.getAction() == WsAction.REGISTER_FOR_SERIAL) {
+			boolean isBackEnd =  Boolean.valueOf(msg.getMessage());
+			
+			UserSession s = new UserSession(session, Boolean.valueOf(msg.getMessage()));
+			s.setType(SessionType.TERMINAL);
+			register(s);
+			logger.debug("backend: " + isBackEnd + " session id: " + session.getId());
+			//send to the backend that you want the serial data
+			if (!isBackEnd) { //we verify that it is not the backend requesting
+				
+				sendInitSerialData(s);
+			}
+			
+
 		}else if (msg.getAction() == WsAction.CLOSE) {
 			processOnClose(session);
-		}else if (msg.getAction() == WsAction.SEND) {  //sendin data to all registered users .. 
+		}else if (msg.getAction() == WsAction.SEND_TO_SERIAL_CONSOLE) {  
+			
+
+			if(msg.getDataType() == DataType.PRINTER_SERIAL_DATA_INIT) {
+				UserSession us = findUser(msg.getAdditionalMessage()); //send to WEB that has register for that information. This contain session id
+				us.SendData(message);///
+			}else {
+				for(UserSession u: userSessions) {	
+					if (u.getType() == SessionType.TERMINAL) {
+						if(msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) {
+							if (u.isSerialConsoleMaster()) {
+								u.SendData(message);
+								break;
+							}
+						}else if(msg.getDataType() == DataType.PRINTER_SERIAL_DATA_WEB) {
+							if (!u.isSerialConsoleMaster()) {
+								u.SendData(message);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		else if (msg.getAction() == WsAction.SEND) {  //sendin data to all registered users .. 
 
 			if(msg.getDataType().isPrintData()) {
 				//save data..
 				this.printData = message;
 			}
-			for(UserSession u: userSessions) {				
-//				logger.debug("Sending to: " + u.getSession().getId());
-				u.SendData(message );
-
+			for(UserSession u: userSessions) {	
+				if (u.getType() == SessionType.DASHBOARD) {
+				//				logger.debug("Sending to: " + u.getSession().getId());
+					u.SendData(message );
+				}
 			}
 		}else if(msg.getAction() == WsAction.REQUEST_DATA) { // remote requesting data ... 
 			//send any saved message if any:
@@ -51,35 +96,37 @@ public class WebSocketHandler {
 
 	}
 
-	private UserSession register(Session session) throws IOException {
+	private UserSession register(UserSession uSession) throws IOException {
 
 		//check if user exist, if exist.. remove and replace session
-		UserSession us = userSessions.stream().filter(u -> u.getSession().getId() == session.getId()).findAny().orElse(null);
+		UserSession us =findUser(uSession.getSession().getId());
 
 		if (us != null) {
-			us.setSession(session);
-			logger.info("UserPool: " + userSessions.size());
+			us.setSession(uSession.getSession());
+			logger.info("user found refreshing. UserPool: " + userSessions.size());
 		}else {			
-			UserSession u = new UserSession(session);
-			userSessions.add(u);
-			logger.info("Adding new session Id: " + session.getId() +  "  UserPool: " + userSessions.size());
+
+			userSessions.add(uSession);
+			logger.info("Adding new session Id: " + uSession.getSession().getId() +  "  UserPool: " + userSessions.size());
 		}
 		return us;
 
 	}
+	//this will send the initial serial data from the printer when asking to register.
+	private void sendInitSerialData(UserSession session) throws IOException {
+		for(UserSession u: userSessions) {			
+			if (u.isSerialConsoleMaster()) {	
+				SocketMessage s  = new SocketMessage(WsAction.REGISTER_FOR_SERIAL, DataType.PRINTER_SERIAL_DATA_TO_BACKEND, session.getSession().getId());
+				u.SendData(JsonStream.serialize(s));
+				logger.debug("sendInitSerialData from: " + session.getSession().getId()  + "  To: " + u.getSession().getId());
+				break;
+			}
+		}
+
+	}
 	public void processOnClose(Session session) {
 		try {
-			
-//			StringBuilder s = new StringBuilder();
-//			for(UserSession ss : userSessions) {
-//				s.append(" ID: " + ss.getSession().getId() + " - " );
-//				
-//			}
-//			
-//			logger.info("Closing session: " + session.getId() + " Current: " + s.toString());
-			
-			
-			UserSession us = userSessions.stream().filter(u -> u.getSession().getId().equalsIgnoreCase(session.getId())).findAny().orElse(null);
+			UserSession us = findUser(session.getId());
 
 			if (us != null) {
 				logger.info("Closing removing session: " + session.getId() + " Size: " + userSessions.size());
@@ -89,5 +136,9 @@ public class WebSocketHandler {
 		}catch(IOException e) {
 			logger.error("Cannot process on close of session", e);
 		}
+	}
+
+	private UserSession findUser(String id) {
+		return userSessions.stream().filter(u -> u.getSession().getId().equalsIgnoreCase(id)).findAny().orElse(null);
 	}
 }

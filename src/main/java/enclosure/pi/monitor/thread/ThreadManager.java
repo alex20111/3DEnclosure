@@ -1,5 +1,7 @@
 package enclosure.pi.monitor.thread;
 
+import java.nio.file.Path;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -17,10 +19,12 @@ public class ThreadManager {
 	private static ThreadManager threadManager;
 
 
-	private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
+	private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(5);
 	private ScheduledFuture<?> printerShutdown;
 	private ScheduledFuture sendSMSThread;
-	
+
+	private ScheduledFuture<?> serialListener;
+
 
 
 	private ThreadManager() {}
@@ -45,14 +49,14 @@ public class ThreadManager {
 	public void shutdownPrinter(int time, TimeUnit unit) {		
 
 		long delay = unit.toMillis(time);
-		
+
 		logger.debug("ShutDown printer in: " + time + " Unit: " + unit + "  delay millis: " + delay);
-		
+
 		//todo cancel previous one if any
 		if (printerShutdown != null) {
 			overridePrinterShutdown();
 		}
-		
+
 		PrinterHandler.getInstance().getPrintData().setPrinterShutdownInProgress(true);
 
 		printerShutdown = executorService.schedule(new PrinterShutdown(), delay, TimeUnit.MILLISECONDS);
@@ -81,10 +85,37 @@ public class ThreadManager {
 		}
 
 	}
-	
+
+	public void startPrinterSerialListener(BlockingQueue<String> queue, Path fileName) {
+		serialListener = executorService.schedule(new PrinterSerialConsoleThread(queue, fileName), 0, TimeUnit.MILLISECONDS);
+	}
+	public void stopPrinterSerialListener() {
+		logger.debug("stopPrinterSerialListener. Is printerShutdown not null? " + ( serialListener != null ? "Is not null" : "is null"));
+
+		if (serialListener != null) {
+			serialListener.cancel(true);
+			int cnt = 0;
+			while(!serialListener.isDone() && cnt < 20) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				cnt ++;
+			}
+			if (cnt == 20) {
+				logger.info("Could not terminate thread - serialListener" );
+			}else {
+
+				serialListener = null;
+			}
+		}
+	}
+
 	public void sendSmsMessage(SendSMSThread smsThread) {
 		logger.debug("sendSmsMessage");
 		executorService.submit(smsThread);
 	}
-	
+
 }

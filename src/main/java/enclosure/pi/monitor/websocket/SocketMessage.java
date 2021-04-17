@@ -6,6 +6,8 @@ public class SocketMessage {
 	private DataType dataType = DataType.NONE; // identify the data type tat is to be sent. Ex: pintting info...
 	private String message = "" ; // could contain an onject in JSON.
 	
+	private String additionalMessage = ""; //in case we need additional messages
+	
 	public SocketMessage() {}
 	
 	public SocketMessage(WsAction action, String message) {
@@ -43,6 +45,14 @@ public class SocketMessage {
 		return this.dataType == DataType.PRINT_DATA;
 	}
 	
+
+	public String getAdditionalMessage() {
+		return additionalMessage;
+	}
+
+	public void setAdditionalMessage(String additionalMessage) {
+		this.additionalMessage = additionalMessage;
+	}
 
 	@Override
 	public String toString() {

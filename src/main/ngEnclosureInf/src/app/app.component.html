@@ -1,1 +1,41 @@
+<div class="container-fluid">
+    <div class="row mt-1 mb-2">
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/">
+                <fa-icon  [icon]="faHome"></fa-icon>
+                Home
+            </button>
+        </div>
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/print">
+                <fa-icon  [icon]="faPrint"></fa-icon>
+                Print
+            </button>
+        </div>
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/extracFan">
+                <fa-icon  [icon]="faFan"></fa-icon>
+                Fan</button>
+        </div>
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/terminal">
+                <fa-icon  [icon]="faTerminal"></fa-icon>
+                Terminal</button>
+        </div>
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/config">
+                <fa-icon  [icon]="faCog"></fa-icon>
+                Config</button>
+        </div>
+        <div class="col-2 ">
+            <button class="btn btn-info btn-block">
+                <fa-icon  [icon]="faPowerOff"></fa-icon>
+                Shutdown</button>
+        </div>
+      
+    </div>
+</div>
+
+
+
 <router-outlet></router-outlet>

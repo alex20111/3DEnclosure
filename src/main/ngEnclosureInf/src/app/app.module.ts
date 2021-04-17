@@ -1,3 +1,4 @@
+import { PiWebSocketService } from './services/pi-web-socket.service';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms'
@@ -16,6 +17,7 @@ import { ExtrAutoButtonComponent } from './extractor/extr-auto-button/extr-auto-
 import { GcodeFileUploadComponent } from './gcode-file-upload/gcode-file-upload.component';
 import { DndDirective } from './directive/dnd.directive';
 import { ProgressComponent } from './_helper/progress/progress.component';
+import { SerialTerminalComponent } from './serial-terminal/serial-terminal.component';
 
 
 @NgModule({
@@ -30,7 +32,8 @@ import { ProgressComponent } from './_helper/progress/progress.component';
     ExtrAutoButtonComponent,
     GcodeFileUploadComponent,
     DndDirective,
-    ProgressComponent
+    ProgressComponent,
+    SerialTerminalComponent
   ],
   imports: [
     BrowserModule,

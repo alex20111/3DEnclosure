@@ -1,3 +1,4 @@
+import { SerialTerminalComponent } from './serial-terminal/serial-terminal.component';
 import { GcodeFileUploadComponent } from './gcode-file-upload/gcode-file-upload.component';
 import { PrintingComponent } from './printing/printing.component';
 import { ConfigComponent } from './config/config.component';
@@ -11,7 +12,8 @@ const routes: Routes = [
   { path: 'extracFan', component: ExtractorComponent },
   { path: 'config', component: ConfigComponent },
   { path: 'print', component: PrintingComponent },
-  { path: 'fileUpload', component: GcodeFileUploadComponent }
+  { path: 'fileUpload', component: GcodeFileUploadComponent },
+  { path: 'terminal', component: SerialTerminalComponent }
 
 ];
 

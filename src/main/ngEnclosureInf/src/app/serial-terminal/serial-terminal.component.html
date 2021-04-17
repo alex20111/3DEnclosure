@@ -1,0 +1,30 @@
+<div class="container">
+    <div class="row">
+        <div class="col-12 ">
+            <form [formGroup]="terminalForm" >
+            <div class="form-row">
+                <div class="form-group col-md-10">
+                    <textarea #textarea [scrollTop]="textarea.scrollHeight" cols="60" rows="15" class="form-control" formControlName="frm_terminal" >
+                    </textarea>
+                </div>
+                <div class="form-group col-md-2">
+                    <div class="form-group">
+                    <button class="btn btn-success mb-1">Save File</button>
+                    <button class="btn btn-success">Save Fil3e</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <input class="form-control" type="text" formControlName="frm_send_text">
+                </div>
+                <div class="form-group col-md-6">
+                    <button type="submit" class="btn btn-primary" (click)="send()">Send</button>
+                </div>
+            </div>
+
+        </form>
+        </div>
+    </div>
+</div>

@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 import com.jsoniter.output.JsonStream;
 
 import home.websocket.WebSocketClientEndPoint;
+import home.websocket.WebSocketClientEndPoint.MessageHandler;
 import home.websocket.WebSocketException;
 
 public class WebSocketClient {
@@ -51,6 +52,11 @@ public class WebSocketClient {
 			initialize();
 		}
 	}
+	
+	public void addHandler(MessageHandler handler) {
+		clientEndPoint.addMessageHandler(handler);
+	}
+
 
 	private void initialize() {
 		try {
