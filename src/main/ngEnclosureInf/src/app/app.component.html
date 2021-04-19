@@ -1,41 +1,63 @@
 <div class="container-fluid">
     <div class="row mt-1 mb-2">
         <div class="col-2 ">
-            <button class="btn btn-info btn-block" routerLink="/">
-                <fa-icon  [icon]="faHome"></fa-icon>
+            <button class="btn btn-info btn-block" routerLink="/"  [ngClass]="{ 'btn-secondary': btnSelected === 1 , 'btn-info': btnSelected !== 1 }" (click)="btnClicked(1)">
+                <fa-icon  [icon]="faHome"></fa-icon> <br/>
                 Home
             </button>
         </div>
         <div class="col-2 ">
-            <button class="btn btn-info btn-block" routerLink="/print">
-                <fa-icon  [icon]="faPrint"></fa-icon>
+            <button class="btn btn-info btn-block" routerLink="/print"  [ngClass]="{ 'btn-secondary': btnSelected === 2 , 'btn-info': btnSelected !== 2 }" (click)="btnClicked(2)">
+                <fa-icon  [icon]="faPrint"></fa-icon> <br/>
                 Print
             </button>
         </div>
         <div class="col-2 ">
-            <button class="btn btn-info btn-block" routerLink="/extracFan">
-                <fa-icon  [icon]="faFan"></fa-icon>
+            <button class="btn btn-info btn-block" routerLink="/extracFan" [ngClass]="{ 'btn-secondary': btnSelected === 3 , 'btn-info': btnSelected !== 3 }" (click)="btnClicked(3)">
+                <fa-icon  [icon]="faFan"></fa-icon> <br/>
                 Fan</button>
         </div>
         <div class="col-2 ">
-            <button class="btn btn-info btn-block" routerLink="/terminal">
-                <fa-icon  [icon]="faTerminal"></fa-icon>
+            <button class="btn btn-info btn-block" routerLink="/terminal" [ngClass]="{ 'btn-secondary': btnSelected === 4 , 'btn-info': btnSelected !== 4 }" (click)="btnClicked(4)">
+                <fa-icon  [icon]="faTerminal"></fa-icon> <br/>
                 Terminal</button>
         </div>
-        <div class="col-2 ">
-            <button class="btn btn-info btn-block" routerLink="/config">
-                <fa-icon  [icon]="faCog"></fa-icon>
+        <!-- <div class="col-2 ">
+            <button class="btn btn-info btn-block" routerLink="/config" [ngClass]="{ 'btn-secondary': btnSelected === 5, 'btn-info': btnSelected !== 5 }" (click)="btnClicked(5)">
+                <fa-icon  [icon]="faCog"></fa-icon> <br/>
                 Config</button>
-        </div>
+        </div> -->
         <div class="col-2 ">
-            <button class="btn btn-info btn-block">
-                <fa-icon  [icon]="faPowerOff"></fa-icon>
-                Shutdown</button>
+
+            <div ngbDropdown class="d-inline-block " placement="bottom-right">
+                <button id="dropdownBasic1" class="btn btn-info btn-bloc" ngbDropdownToggle><fa-icon  [icon]="faCog"></fa-icon><br/> Settings</button>
+            
+                <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+                    <button ngbDropdownItem routerLink="/config" >
+                        <fa-icon  [icon]="faCog"></fa-icon>
+                        Config
+                    </button>
+                  <button ngbDropdownItem (click)="handleShutDown('ShuttingDown')">
+                    <fa-icon  [icon]="faPowerOff"></fa-icon>
+                    Shutdown
+                    </button>
+                </div>
+              </div>
         </div>
       
     </div>
 </div>
-
+<p *ngIf="message">
+    <ngb-alert type="success" (closed)="message = ''">
+      <div [innerHTML]="message"></div>
+      <button *ngIf="shuttingDown" class="btn btn-warning" (click)="handleShutDown('CancelShutDown')">Cancel shutdown</button>
+    </ngb-alert>
+  </p>
+  <p *ngIf="error">
+    <ngb-alert type="danger" (closed)="error ='' ">
+      {{error}}
+    </ngb-alert>
+  </p>
 
 
 <router-outlet></router-outlet>

@@ -1,6 +1,3 @@
-<!-- <div class="container-fluid">
-  <div class="row">
-    <div class="col-12"> -->
 
 <p *ngIf="error">
   <ngb-alert type="danger" (closed)="error ='' ">
@@ -28,22 +25,6 @@
       Cancel shutdown</button>
   </span>
 </p>
-
-<!-- <div class="ml-3" style="color: white;border-color: white; ">
-  <div ngbDropdown class="d-inline-block " placement="bottom-left">
-    <a href="#" id="dropdownBasic1" ngbDropdownToggle> Menu </a>
-
-    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
-      <button ngbDropdownItem routerLink="/print">Print</button>
-      <button ngbDropdownItem routerLink="/extracFan">Extractor</button>
-      <button ngbDropdownItem routerLink="/terminal">Terminal</button>
-      <button ngbDropdownItem (click)="light()">Lights {{lightText}}</button>
-      <button ngbDropdownItem routerLink="/config">Config</button>
-      <button ngbDropdownItem (click)="shutDown()">Shutdown</button>
-    </div>
-  </div>
-
-</div> -->
 
 <div class="container-fluid">
   <div class="row">
@@ -108,8 +89,6 @@
               </div>
             </div>
           </div>
-
-          <!-- </div> -->
         </div>
       </div>
     </div>
@@ -128,8 +107,6 @@
             <img class="images " style src="assets/heatedBed.png" width="36" height="36" />
             {{printData.bedTemp}} / {{printData.bedTempMax}}
           </span>
-
-
         </p>
 
       </div>

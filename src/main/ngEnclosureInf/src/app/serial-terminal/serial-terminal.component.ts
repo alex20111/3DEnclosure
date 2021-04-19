@@ -65,10 +65,13 @@ export class SerialTerminalComponent implements OnInit, OnDestroy {
   }
 
   send() {
-    console.log("Sending");
+    let sendValue = this.terminalForm.controls.frm_send_text.value;
+
+    console.log("Sending: " , sendValue);
     const regSocket = new SocketMessage();
-    regSocket.action = WsAction.REGISTER_FOR_SERIAL;
-    regSocket.message = "false"; //this is required to tell that this user is not the backend user.
+    regSocket.action = WsAction.SEND_TO_SERIAL_CONSOLE;
+    regSocket.dataType = 'PRINTER_SERIAL_DATA_TO_BACKEND';
+    regSocket.message = sendValue; //this is required to tell that this user is not the backend user.
     this.wsSocket.sendMessage(regSocket);
   }
 

@@ -52,7 +52,7 @@ public class WebSocketHandler {
 		}else if (msg.getAction() == WsAction.SEND_TO_SERIAL_CONSOLE) {  
 			
 
-			if(msg.getDataType() == DataType.PRINTER_SERIAL_DATA_INIT) {
+			if(msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_USER) {
 				UserSession us = findUser(msg.getAdditionalMessage()); //send to WEB that has register for that information. This contain session id
 				us.SendData(message);///
 			}else {

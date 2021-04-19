@@ -12,9 +12,9 @@ export class GeneralService {
   constructor(private http: HttpClient) { }
 
 
-  shutdownSystem(): Observable<Message> {
+  shutdownSystem(shuttingDown: string): Observable<Message> {
 
-    return this.http.get<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/general/shutdown`);
+    return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/general/shutdown`, shuttingDown);
 
   }
 

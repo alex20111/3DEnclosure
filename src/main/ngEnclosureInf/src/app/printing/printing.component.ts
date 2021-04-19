@@ -86,7 +86,6 @@ export class PrintingComponent implements OnInit {
 
           this.loading = true;
           this.printService.startPrinting(print).subscribe(result => {
-            console.log("Start print result message: ", result)
             this.loading = false;
             if (result.messageType !== "SUCCESS") {
               this.error = result.message;

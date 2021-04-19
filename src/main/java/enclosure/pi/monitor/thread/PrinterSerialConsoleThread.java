@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +24,6 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 	private static final Logger logger = LogManager.getLogger(PrinterSerialConsoleThread.class);
 
 	private BlockingQueue<String> printQueue;
-//	private List<SerialOutput> outputs;
 	private StringBuilder outputs;
 	private int recordCnt = 0;
 	private Path serialFileOutput;
@@ -41,7 +38,6 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 		wsClient = WebSocketClient.getInstance();
 
 		wsClient.addHandler(this);
-//		this.outputs = new ArrayList<>();
 		this.outputs = new StringBuilder();
 
 		this.serialFileOutput = fileName;
@@ -67,7 +63,6 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 				} catch (InterruptedException e) {
 					break;
 				}			
-
 
 				//then send to host if any connected.
 
@@ -115,9 +110,12 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 		SocketMessage msg = JsonIterator.deserialize(str, SocketMessage.class);
 		if (msg.getAction() == WsAction.REGISTER_FOR_SERIAL && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //serial init. so basically all serial data that is stored
 			
-			SocketMessage returnMsg = new SocketMessage(WsAction.SEND_TO_SERIAL_CONSOLE,DataType.PRINTER_SERIAL_DATA_INIT, outputs.toString() );
+			SocketMessage returnMsg = new SocketMessage(WsAction.SEND_TO_SERIAL_CONSOLE,DataType.PRINTER_SERIAL_DATA_TO_USER, outputs.toString() );
 			returnMsg.setAdditionalMessage(msg.getMessage());
 			WebSocketClient.getInstance().sendMessage(JsonStream.serialize(returnMsg));
+		}else if (msg.getAction() == WsAction.SEND_TO_SERIAL_CONSOLE && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //command coming from the web
+			//TODO
+			logger.debug("Msg -----------> : " + msg.getMessage());
 		}
 	}
 

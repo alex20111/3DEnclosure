@@ -54,8 +54,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
     this.countdownToDate = this.session.getSharedObject(Constants.PRINTER_COOLDOWN_TIMER) as Date;
 
-    setTimeout(() => this.initWebSocket(),800);
-    
+    setTimeout(() => this.initWebSocket(),800);   
   
   }
 
@@ -65,6 +64,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     },
       err => {
         console.log("Web Socket error!!!", err);
+        this.error = "Error connection to web socket failed. URL: " + err.target.url;
       });
 
    // register 1st
@@ -113,12 +113,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    
-    // this.wsSocket.closeSocket();
-    // const socketMessage = new SocketMessage();
-    // socketMessage.action = WsAction.CLOSE;
-    // // socketMessage.dataType = "PRINT_DATA";  //request print data if any
-    // this.wsSocket.sendMessage(socketMessage);
 
     if (this.webSocketSubs){
       this.webSocketSubs.unsubscribe();
@@ -133,23 +127,12 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     this.error = httpError.message + ' ' + httpError.error.error;
     console.log("httpError", httpError);
   }
-  //shutdown the system.
-  shutDown() {
-    this.generalService.shutdownSystem().subscribe(success => {
-      this.message = success.message;
-    },
-      httpError => {
-        this.error = httpError.message + ' ' + httpError.error.st;
-      });
-  }
-
   connectPrinter() {
 
     if (!this.printerOnOffLoading) {
 
       let actionRequest = true;
       let action = "turnOn";
-
 
       if (this.printData.printerConnected) {
         if (confirm("Turn off printer? ")) {
@@ -321,7 +304,6 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.countdownToDate = null;
         this.session.removeSharedObject(Constants.PRINTER_COOLDOWN_TIMER);
       }
-
 
       if (this.printData.lightOn) {
         this.lightColor = 'rgb(12, 247, 12)'
