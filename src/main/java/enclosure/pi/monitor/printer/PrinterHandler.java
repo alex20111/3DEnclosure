@@ -26,7 +26,10 @@ import org.apache.logging.log4j.Logger;
 import com.fazecast.jSerialComm.SerialPort;
 import com.jsoniter.output.JsonStream;
 
+import enclosure.pi.monitor.arduino.ExtractorFan;
+import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 import enclosure.pi.monitor.common.Constants;
+import enclosure.pi.monitor.service.FanControlService;
 import enclosure.pi.monitor.service.model.FileList;
 import enclosure.pi.monitor.service.model.PrintServiceData;
 import enclosure.pi.monitor.thread.SendSMSThread;
@@ -43,16 +46,14 @@ public class PrinterHandler {
 	private static PrinterHandler printerHandler;
 
 	private Object monitor = new Object();
-	
+
 	private Object pauseThread = new Object();
-	
+
 	private SerialPort comPort;
 	private InputStream in;
 
 	private Path filePath;
-	private BlockingQueue<String> serialQueue;
-//	private StringBuilder outputs = new StringBuilder();
-	
+	private BlockingQueue<String> serialQueue;	
 	private boolean serialConnStarted = false;
 
 	private boolean forceStopped = false;
@@ -64,12 +65,12 @@ public class PrinterHandler {
 	private boolean sdCardReady = false;
 	private List<String> fileList = new ArrayList<>();
 	private LocalDateTime prevSdCardReading = LocalDateTime.now();
-	
+
 	private LocalDateTime lastSerialHeartBeat = null; //last time that we got a serial return..
 	private LocalDateTime lastPrinterVerification = null;
 
 	private PrintServiceData printData = new PrintServiceData();
-	
+
 	//files bytes 
 	private long fileBytesProcessed = -1;
 
@@ -87,8 +88,6 @@ public class PrinterHandler {
 
 	private PrinterHandler() { 
 		logger.debug("Starting: PrinterHandler");
-
-		
 
 		connect();
 	}	
@@ -120,7 +119,7 @@ public class PrinterHandler {
 								logger.info("Connected to printer");
 								printData.setPrinterConnected(true); 
 								in = comPort.getInputStream();
-								
+
 								filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
 								serialQueue = new ArrayBlockingQueue<String>(1000);
 								serialQueue.add("Starting print instance");
@@ -133,7 +132,7 @@ public class PrinterHandler {
 							else {
 								printData.setPrinterConnected(false);								 
 								serialConnStarted = false;
-								
+
 								ThreadManager.getInstance().stopPrinterSerialListener();
 								logger.info("Could not connect to printer , retrying in 15 sec. " );
 							}
@@ -141,11 +140,11 @@ public class PrinterHandler {
 						}else if (comPort != null && comPort.isOpen() && !mode.isPrinting()) {
 							verifyPrinterConnected();
 						}else if (comPort != null &&
-									comPort.isOpen() && mode == PrintMode.SD_PRINTING && 
-									printData.isPrintingModel() && 
-									!printData.isPrintPaused()) {
+								comPort.isOpen() && mode == PrintMode.SD_PRINTING && 
+								printData.isPrintingModel() && 
+								!printData.isPrintPaused()) {
 
-	
+
 							if (prevSdCardReading != null && LocalDateTime.now().isAfter(prevSdCardReading)) {
 								prevSdCardReading.plusSeconds(30);
 								//send periodic file status when SD is printing.
@@ -162,7 +161,6 @@ public class PrinterHandler {
 					}
 				}
 			}
-
 		}).start();
 	}
 
@@ -189,10 +187,8 @@ public class PrinterHandler {
 
 							long totalLength = gcodeFile.length();
 							double lengthPerPercent = 100.0 / totalLength;
-//							long readLength = 0;
 							fileBytesProcessed = 0;
 
-//							outputs.append("!!! -- Starting print -- !!!\n");
 							try (BufferedReader objReader = new BufferedReader(new FileReader(gcodeFile))){
 
 								String str;
@@ -229,8 +225,7 @@ public class PrinterHandler {
 										synchronized (pauseThread) {
 											pauseThread.wait();
 										}
-									}
-									
+									}									
 								}
 
 								finalizePiPrinting();
@@ -247,8 +242,6 @@ public class PrinterHandler {
 
 							printingThread = null;
 
-//							outputs.append("!!! == print thread finished == !!!\n");
-							writeOutputs();
 							logger.debug("Printer thread finished");
 						}
 					});
@@ -273,7 +266,6 @@ public class PrinterHandler {
 
 				try {
 					fileBytesProcessed = 0;
-					//					sendCommand("M111 S1", true);
 					//select file
 					sendCommand("M23 " + file.getFileName(), 20000); //select file name
 
@@ -306,33 +298,32 @@ public class PrinterHandler {
 	 */
 	public List<String> getSdCardFileList() throws IOException {
 		logger.debug("Getting SD Card file List");
-		
+
 		if(printData.isPrinterConnected()) {
 
-		fileList.clear();
-		sdCardReady = false;
-		try {
-			for(int i = 0; i < 6; i++) {
-				if (!sdCardReady) {
-					logger.debug("checking if sd card ready");
-					sendCommand("M21", 20000);  //see if the SD card is ready
+			fileList.clear();
+			sdCardReady = false;
+			try {
+				for(int i = 0; i < 6; i++) {
+					if (!sdCardReady) {
+						logger.debug("checking if sd card ready");
+						sendCommand("M21", 20000);  //see if the SD card is ready
+					}
+					else if (sdCardReady) {
+						break;
+					}
 				}
-				else if (sdCardReady) {
-					break;
+				
+				if (sdCardReady) {
+
+					sendCommand("M20", 20000);	// list files on the card.			
+				}else {
+					logger.error("cannot initialize SD card  ");
 				}
-			}
-			logger.debug("sd carc ready:  " + sdCardReady);
-			if (sdCardReady) {
 
-				sendCommand("M20", 20000);	// list files on the card.			
-			}else {
-				logger.error("cannot initialize SD card  ");
+			}catch(Exception ex) {
+				logger.error("Message acessing SD card" , ex);
 			}
-
-		}catch(Exception ex) {
-			logger.error("Message acessing SD card" , ex);
-		}
-		writeOutputs();
 		}else {
 			throw new IOException("Printer not connected, cannot get files");
 		}
@@ -341,7 +332,6 @@ public class PrinterHandler {
 
 	public void stopPrinting() {
 		logger.debug("Stopping printing!!");
-//		outputs.append("\n!!! == Stop print == !!!\n");
 		try {
 			if (mode == PrintMode.PI_PRINTING) {
 
@@ -398,8 +388,6 @@ public class PrinterHandler {
 		}catch(InterruptedException | IOException ex) {
 			logger.error("Error in stopping printer", ex);
 		}
-//		outputs.append("!!! == Stop print END  == !!!\n");
-		writeOutputs();
 	}
 
 	public PrintServiceData getPrintData() {
@@ -443,14 +431,12 @@ public class PrinterHandler {
 				synchronized (pauseThread) {
 					pauseThread.notifyAll();
 				}
-				
 			}
 		}
 	}
 
-	private void sendCommand(String command, int wait) throws IOException, InterruptedException {
-//		outputs.append("Writing: " + command + "\n");
-//				logger.debug("Writing: " + command );
+	public void sendCommand(String command, int wait) throws IOException, InterruptedException {
+		//				logger.debug("Writing: " + command );
 		serialQueue.offer("Writing: " + command + "\n");
 		String s2cmd = command + "\r\n";
 		byte[] toB = s2cmd.getBytes();
@@ -463,10 +449,9 @@ public class PrinterHandler {
 		}
 	}
 	private boolean verifyPrinterConnected() { 	
-		
-		
+
 		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - lastPrinterVerification: " + lastPrinterVerification);
-		
+
 		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
 		if (lastSerialHeartBeat != null && lastPrinterVerification != null && 
 				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
@@ -474,7 +459,7 @@ public class PrinterHandler {
 			lastPrinterVerification = LocalDateTime.now();
 			return true;
 		}	
-		
+
 		String s2cmd = "M111\r\n";
 		byte[] toB = s2cmd.getBytes();
 		comPort.writeBytes(toB, toB.length);
@@ -502,7 +487,6 @@ public class PrinterHandler {
 	}
 
 	private void sendTempData(String evnt) {
-		//		logger.debug("sendTempData: " + evnt);
 		try {
 			String strSplit[] = evnt.trim().split(" ");
 
@@ -537,15 +521,6 @@ public class PrinterHandler {
 		}
 	}
 
-	private void writeOutputs() {
-//		try {
-//			Files.write(filePath, outputs.toString().getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-//			outputs = new StringBuilder();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-	}
-
 	/**
 	 * Thread that listen to com events.
 	 */
@@ -567,7 +542,7 @@ public class PrinterHandler {
 									while( (line = br.readLine() ) != null) {
 										lastSerialHeartBeat = LocalDateTime.now();
 										serialQueue.offer(line);
-//																				logger.debug("Response: " + line );
+										//																				logger.debug("Response: " + line );
 										if (line.startsWith("ok") ) {
 											synchronized (monitor) {
 												monitor.notifyAll();
@@ -605,7 +580,6 @@ public class PrinterHandler {
 					logger.debug("printer listening thread ended");
 					printerListeningThread = null;
 				}
-
 			});
 
 			printerListeningThread.start();
@@ -637,17 +611,23 @@ public class PrinterHandler {
 		//send SMS message
 		ThreadManager tm = ThreadManager.getInstance();
 		tm.sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
-		
+
 		if (printData.isAutoPrinterShutdown()) { 
 			tm.shutdownPrinter(5, TimeUnit.MINUTES);
 		}
-		writeOutputs();
+		try {
+			//set fan to 100%
+			ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
+			fan.setFanSpeed(100);
+		}catch (IOException e) {
+			logger.error("Error for Extractor Fan: " + e.getMessage());
+		}
 	}
 	private void finalizePiPrinting() {
-		
+
 		logger.debug("Looop done printing sending websocket message");
 		printData.setPrintFinished();
-		
+
 		if (printData.isAutoPrinterShutdown()) {  
 			ThreadManager.getInstance().shutdownPrinter(5, TimeUnit.MINUTES);
 		}
@@ -656,6 +636,14 @@ public class PrinterHandler {
 		//send SMS message
 		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
 		
+		try {
+			//set fan to 100%
+			ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
+			fan.setFanSpeed(100);
+		}catch (IOException e) {
+			logger.error("Error for Extractor Fan: " + e.getMessage());
+		}
+
 	}
 
 }

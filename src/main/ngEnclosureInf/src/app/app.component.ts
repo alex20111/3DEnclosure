@@ -40,7 +40,14 @@ export class AppComponent {
 
     this.generalService.shutdownSystem(cmd).subscribe(success => {
       this.message = success.message;
-      this.shuttingDown = true;
+      //Interrupted
+      if ("ShuttingDown" === cmd){
+        this.shuttingDown = true;
+      }else if ("CancelShutDown" === cmd){
+        this.message = "ShutDown Cancelled";
+        this.shuttingDown = false;
+      }
+     
     },
       httpError => {
         this.error = httpError.message + ' ' + httpError.error.st;

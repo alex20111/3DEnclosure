@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.output.JsonStream;
 
+import enclosure.pi.monitor.printer.PrinterHandler;
 import enclosure.pi.monitor.websocket.DataType;
 import enclosure.pi.monitor.websocket.SocketMessage;
 import enclosure.pi.monitor.websocket.WebSocketClient;
@@ -41,7 +42,7 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 		this.outputs = new StringBuilder();
 
 		this.serialFileOutput = fileName;
-		
+
 		SocketMessage msg = new SocketMessage(WsAction.REGISTER_FOR_SERIAL,DataType.NONE, "true" );
 		WebSocketClient.getInstance().sendMessage(msg);
 	}
@@ -53,11 +54,11 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 			try {
 				String str = "";
 				try {
-					 str = printQueue.take();
-					 if(!str.contains("\n")) {
-						 str = str + "\n";
-					 }
-					 
+					str = printQueue.take();
+					if(!str.contains("\n")) {
+						str = str + "\n";
+					}
+
 					outputs.append(str );
 					logger.debug("PrinterSerialConsoleThread: --> " + str);
 				} catch (InterruptedException e) {
@@ -90,7 +91,7 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 
 		outputs.append("Printer shutdown");
 		writeOutputs();
-		
+
 		logger.debug("Stopped thread PrinterSerialConsoleThread" );
 
 	}
@@ -106,16 +107,24 @@ public class PrinterSerialConsoleThread implements Runnable, MessageHandler{
 	@Override
 	public void handleMessage(String str) {
 		logger.debug("Messages from websocket: " + str);
-		
-		SocketMessage msg = JsonIterator.deserialize(str, SocketMessage.class);
-		if (msg.getAction() == WsAction.REGISTER_FOR_SERIAL && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //serial init. so basically all serial data that is stored
-			
-			SocketMessage returnMsg = new SocketMessage(WsAction.SEND_TO_SERIAL_CONSOLE,DataType.PRINTER_SERIAL_DATA_TO_USER, outputs.toString() );
-			returnMsg.setAdditionalMessage(msg.getMessage());
-			WebSocketClient.getInstance().sendMessage(JsonStream.serialize(returnMsg));
-		}else if (msg.getAction() == WsAction.SEND_TO_SERIAL_CONSOLE && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //command coming from the web
-			//TODO
-			logger.debug("Msg -----------> : " + msg.getMessage());
+
+		try {
+
+			SocketMessage msg = JsonIterator.deserialize(str, SocketMessage.class);
+			if (msg.getAction() == WsAction.REGISTER_FOR_SERIAL && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //serial init. so basically all serial data that is stored
+
+				SocketMessage returnMsg = new SocketMessage(WsAction.SEND_TO_SERIAL_CONSOLE,DataType.PRINTER_SERIAL_DATA_TO_USER, outputs.toString() );
+				returnMsg.setAdditionalMessage(msg.getMessage());
+				WebSocketClient.getInstance().sendMessage(JsonStream.serialize(returnMsg));
+			}else if (msg.getAction() == WsAction.SEND_TO_SERIAL_CONSOLE && msg.getDataType() == DataType.PRINTER_SERIAL_DATA_TO_BACKEND) { //command coming from the web
+				//TODO
+				logger.debug("Msg -----------> : " + msg.getMessage());
+				PrinterHandler.getInstance().sendCommand(msg.getMessage(), 0);
+
+			}
+
+		} catch (IOException | InterruptedException e) {
+			logger.error("Error in handleMessage", e );
 		}
 	}
 

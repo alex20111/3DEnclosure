@@ -41,13 +41,11 @@ public class PrintingService {
 	 * Get the print page the information to display
 	 * @return
 	 */
-
 	@Path("initScreen")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getPrintUiInfo() {
 		logger.debug("getPrintUiInfo ");		
-
 
 		try {
 			PrinterHandler ph = PrinterHandler.getInstance();		
@@ -86,12 +84,10 @@ public class PrintingService {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response startPrinting(PrintServiceData printData) {
 
-
 		logger.debug("Start printing. info: " + printData );
 
 		Message msg = new Message(MessageType.ERROR,"Printing error");
 		Status status = Status.FORBIDDEN;
-
 
 		if (printData.getPrintFile() != null) {
 			status = Status.OK;
@@ -112,7 +108,6 @@ public class PrintingService {
 
 				if (!psd.isPrinting() ) {
 					logger.debug("Starting printing file: " + printData.getPrintFile());
-
 
 					try {
 						FileList fileToPrint = printData.getPrintFile();
@@ -137,7 +132,6 @@ public class PrintingService {
 				msg = new Message(MessageType.WARN, "Printer Not connected");
 			}
 		}		
-
 		return Response.status(status).entity(msg).build();
 	}
 	/**
@@ -170,8 +164,6 @@ public class PrintingService {
 			msg = new Message(MessageType.WARN,"Error stopping printing. " + e.getMessage());
 		}
 
-
-
 		return Response.ok().entity(msg).build();
 	}
 
@@ -185,14 +177,12 @@ public class PrintingService {
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response printerPower(String data) {
-
 		logger.debug("printer on/off: " + data);
 
 		Message msg = new Message(MessageType.ERROR, "Severe error in printerPower");
 		Status status = Status.FORBIDDEN;
 
 		try {
-
 
 			PrinterHandler ph = PrinterHandler.getInstance();
 			PrintServiceData psd = ph.getPrintData();
@@ -276,8 +266,7 @@ public class PrintingService {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response stopPrinterShutdown() {
-		logger.debug("stopPrinterShutdown ");		
-
+		logger.debug("stopPrinterShutdown ");	
 
 		Message msg = new Message(MessageType.ERROR, "Severe error in printerPower");
 		Status status = Status.FORBIDDEN;
@@ -301,6 +290,39 @@ public class PrintingService {
 		return Response.status(status).entity(msg).build(); //TODO correct
 	}
 
+	/**
+	 * Stop the automatic shutdown of the printer 
+	 * @return
+	 */
+	@Path("autoShutdown")
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.TEXT_PLAIN)
+	public Response autoShutdownPrinter(String autoShutdown) {
+		logger.debug("autoShutdownPrinter:  " + autoShutdown);	
+
+		Message msg = new Message(MessageType.ERROR, "Severe error in autoShutdownPrinter");
+		Status status = Status.FORBIDDEN;
+
+		try {
+			//true or false;
+			boolean autoShutdownPrinter = Boolean.valueOf(autoShutdown);
+
+			PrintServiceData ps = PrinterHandler.getInstance().getPrintData();
+			
+			ps.setAutoPrinterShutdown(autoShutdownPrinter);
+			
+			msg = new Message(MessageType.SUCCESS, "Value set to : " + autoShutdownPrinter);
+			
+			return Response.ok().entity(msg).build();
+
+		}catch (Exception ex) {
+			logger.error("Error autoShutdownPrinter" , ex);
+			 msg = new Message(MessageType.ERROR, ex.getMessage());
+		}
+
+		return Response.status(status).entity(msg).build(); //TODO correct
+	}
 
 	private Message powerOnPrinter(PrintServiceData psd, Message msg) throws IllegalStateException, IOException, InterruptedException {
 		PrinterPower printPower = new PrinterPower(PowerAction.ON);
@@ -320,6 +342,4 @@ public class PrintingService {
 
 		return msg;
 	}
-
 }
-

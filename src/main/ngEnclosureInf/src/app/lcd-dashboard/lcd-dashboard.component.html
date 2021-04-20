@@ -24,6 +24,12 @@
       <span *ngIf="coolingDelayLoading" class="spinner-border spinner-border-sm mr-1"></span>
       Cancel shutdown</button>
   </span>
+  <span *ngIf="printData.autoPrinterShutdown">
+    <button [disabled]="btnShutdownLoading"  class="btn btn-primary btn-sm" (click)="autoShutdown()">   
+      <span *ngIf="btnShutdownLoading" class="spinner-border spinner-border-sm mr-1"></span>
+      
+     {{printPauseBtnTxt}}</button>
+  </span>
 </p>
 
 <div class="container-fluid">

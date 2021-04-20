@@ -73,6 +73,7 @@ export class SerialTerminalComponent implements OnInit, OnDestroy {
     regSocket.dataType = 'PRINTER_SERIAL_DATA_TO_BACKEND';
     regSocket.message = sendValue; //this is required to tell that this user is not the backend user.
     this.wsSocket.sendMessage(regSocket);
+    this.terminalForm.patchValue({ frm_send_text: "" });
   }
 
 }

@@ -24,6 +24,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   coolingDelay: boolean = false;
   coolingDelayLoading: boolean = false;
   countdownToDate: Date;
+  btnShutdownLoading : boolean  = false;
 
   //alerts
   error: string = '';
@@ -216,6 +217,22 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.pausePrintLoading = false;
         this.error = err.message + ' ' + err.error.error;
       });
+  }
+
+  autoShutdown(){
+    const isAutoShutdown = !this.printData.autoPrinterShutdown;
+
+    console.log("autoShutdown: " ,this.printData.autoPrinterShutdown , isAutoShutdown);
+    this.btnShutdownLoading = true;
+    this.printService.autoShutdownPrinter(isAutoShutdown.toString()).subscribe(result => {
+      this.printData.autoPrinterShutdown = isAutoShutdown;
+      this.btnShutdownLoading = false;
+    },
+    err => {
+      this.error = err.message + ' ' + err.error.error;
+      this.btnShutdownLoading = false;
+    });
+
   }
 
   //handle websocket data

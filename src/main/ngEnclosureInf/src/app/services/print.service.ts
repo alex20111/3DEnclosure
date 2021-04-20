@@ -45,6 +45,11 @@ export class PrintService {
   pausePrint(action: string): Observable<Message>{
     return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/pausePrinter`, action);
   }
+
+  autoShutdownPrinter(action: string): Observable<Message>{
+    return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/print/autoShutdown`, action);
+    
+  }
   
 }
 
