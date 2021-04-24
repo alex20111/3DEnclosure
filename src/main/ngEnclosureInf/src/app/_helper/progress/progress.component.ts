@@ -8,9 +8,14 @@ import { Component, Input, OnInit } from '@angular/core';
 export class ProgressComponent implements OnInit {
 
   @Input() progress = 0;
+
   constructor() { }
 
   ngOnInit(): void {
+  }
+
+  processChange(){
+    console.log("Process number: " + this.progress);
   }
 
 }

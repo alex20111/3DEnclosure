@@ -40,6 +40,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   pausePrintLoading: boolean = false;
   printPauseBtnTxt: string = "Pause";
 
+
   //icons
   faThermometerHalf = faThermometerHalf;
   faLightbulb = faLightbulb;
@@ -146,14 +147,14 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.printerOnOffLoading = true;
       }
 
-      console.log("action request", actionRequest);
+      // console.log("action request", actionRequest);
       if (actionRequest) {
         this.coolingDelay = false;
 
         this.printService.printerOnOff(action).subscribe(result => {
           this.printerOnOffLoading = false;
 
-          console.log("Printer power relay", result);
+          // console.log("Printer power relay", result);
 
           if (result.messageType === "SUCCESS") {
             if (result.message === 'on') {
@@ -182,7 +183,7 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
   cancelShutdown() {
     this.coolingDelayLoading = true;
     this.printService.stopPrinterShutDown().subscribe(result => {
-      console.log("Cooling result", result);
+      // console.log("Cooling result", result);
 
       if (result.messageType === "SUCCESS") {
         this.printMessage = "";
@@ -219,7 +220,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
-  autoShutdown(){
+  autoShutdown(){    
+
     const isAutoShutdown = !this.printData.autoPrinterShutdown;
 
     console.log("autoShutdown: " ,this.printData.autoPrinterShutdown , isAutoShutdown);
@@ -227,6 +229,16 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     this.printService.autoShutdownPrinter(isAutoShutdown.toString()).subscribe(result => {
       this.printData.autoPrinterShutdown = isAutoShutdown;
       this.btnShutdownLoading = false;
+if (isAutoShutdown){
+  
+  this.printMessage = this.printMessage + " (Auto Shutdown)";
+  // console.log("Printe message: " , this.printMessage);
+}else{
+  this.printMessage = this.printMessage.substring(0, this.printMessage.indexOf('('));// + " (Auto Shutdown)";
+  
+  // console.log("Printe2 message: " , this.printMessage);
+}
+
     },
     err => {
       this.error = err.message + ' ' + err.error.error;
@@ -237,6 +249,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
 
   //handle websocket data
   webSocketData(message: SocketMessage) {
+
+    
     if (message.dataType === "PRINT_DATA"
       || message.dataType === "PRINT_TOTAL_TIME"
       || message.dataType === "PRINT_DONE") {
@@ -244,9 +258,10 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
       console.log("Print data: ", data);
       this.printData = data;
 
+      // let sht = data.autoPrinterShutdown;
       if (data.printing) {
         if (!this.printerSubscription) { //timer to display print time            
-          console.log("datadatadata: ", data);
+          // console.log("datadatadata: ", data);
           let printStartedDate = new Date(data.printStarted);
 
           let totPrintTime = undefined;
@@ -280,7 +295,8 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
             } else {
               this.printMessage = `${hours} h ${minutes} m ${seconds} s` + this.printMsgAdd;
             }
-            if (data.autoPrinterShutdown) {
+            if (this.printData.autoPrinterShutdown) {
+              
               this.printMessage = this.printMessage + " (Auto Shutdown)";
             }
           });

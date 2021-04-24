@@ -15,20 +15,21 @@
     <ngb-progressbar type="info" [value]="printData.percentComplete">{{printData.percentComplete}}%</ngb-progressbar>
   </span>
   <span *ngIf="printData.printingModel">
-    <button [disabled]="pausePrintLoading" class="btn btn-primary btn-sm" (click)="pausePrint()">   
+    <button [disabled]="pausePrintLoading" class="btn btn-primary btn-sm mt-1" (click)="pausePrint()">   
       <span *ngIf="pausePrintLoading" class="spinner-border spinner-border-sm mr-1"></span>
      {{printPauseBtnTxt}}</button>
   </span>
   <span *ngIf="coolingDelay">
-    <button [disabled]="coolingDelayLoading" class="btn btn-primary btn-sm" (click)="cancelShutdown()">   
+    <button [disabled]="coolingDelayLoading" class="btn btn-primary btn-sm mt-1" (click)="cancelShutdown()">   
       <span *ngIf="coolingDelayLoading" class="spinner-border spinner-border-sm mr-1"></span>
       Cancel shutdown</button>
   </span>
-  <span *ngIf="printData.autoPrinterShutdown">
-    <button [disabled]="btnShutdownLoading"  class="btn btn-primary btn-sm" (click)="autoShutdown()">   
+  <span *ngIf="printData.printing ">
+    <button [disabled]="btnShutdownLoading"  class="btn btn-primary btn-sm ml-2 mt-1" (click)="autoShutdown()"
+     [innerHtml]="printData.autoPrinterShutdown ?  'Auto shutdown disable' : 'Auto shutdown enable'">   
       <span *ngIf="btnShutdownLoading" class="spinner-border spinner-border-sm mr-1"></span>
       
-     {{printPauseBtnTxt}}</button>
+     </button>
   </span>
 </p>
 
