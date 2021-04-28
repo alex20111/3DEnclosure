@@ -18,6 +18,7 @@ import { GcodeFileUploadComponent } from './gcode-file-upload/gcode-file-upload.
 import { DndDirective } from './directive/dnd.directive';
 import { ProgressComponent } from './_helper/progress/progress.component';
 import { SerialTerminalComponent } from './serial-terminal/serial-terminal.component';
+import { WebcamComponent } from './webcam/webcam.component';
 
 
 @NgModule({
@@ -33,7 +34,8 @@ import { SerialTerminalComponent } from './serial-terminal/serial-terminal.compo
     GcodeFileUploadComponent,
     DndDirective,
     ProgressComponent,
-    SerialTerminalComponent
+    SerialTerminalComponent,
+    WebcamComponent
   ],
   imports: [
     BrowserModule,

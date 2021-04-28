@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +28,6 @@ import com.jsoniter.output.JsonStream;
 import enclosure.pi.monitor.arduino.ExtractorFan;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 import enclosure.pi.monitor.common.Constants;
-import enclosure.pi.monitor.service.FanControlService;
 import enclosure.pi.monitor.service.model.FileList;
 import enclosure.pi.monitor.service.model.PrintServiceData;
 import enclosure.pi.monitor.thread.SendSMSThread;
@@ -125,7 +123,7 @@ public class PrinterHandler {
 								serialQueue.add("Starting print instance");
 								ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
 
-								Thread.sleep(6000);
+//								Thread.sleep(3000);
 								startListening();
 								sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
 							}
@@ -450,40 +448,51 @@ public class PrinterHandler {
 	}
 	private boolean verifyPrinterConnected() { 	
 
-		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - lastPrinterVerification: " + lastPrinterVerification);
-
-		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
-		if (lastSerialHeartBeat != null && lastPrinterVerification != null && 
-				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
-						lastPrinterVerification.minusSeconds(15).isBefore(lastSerialHeartBeat)	)		){
-			lastPrinterVerification = LocalDateTime.now();
+		LocalDateTime nowMinus20Sec = LocalDateTime.now().minusSeconds(20);
+		
+		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - nowMinus20Sec: " + nowMinus20Sec);
+		
+		 
+		if (lastSerialHeartBeat != null && lastSerialHeartBeat.isAfter(nowMinus20Sec)) {
 			return true;
-		}	
-
-		String s2cmd = "M111\r\n";
-		byte[] toB = s2cmd.getBytes();
-		comPort.writeBytes(toB, toB.length);
-		boolean answer = false;
-
-		LocalDateTime breakNowFuture = LocalDateTime.now().plusSeconds(5);	
-
-		try {
-			synchronized (monitor) {
-				monitor.wait(10000);
-			}
-
-			if(LocalDateTime.now().isAfter(breakNowFuture)) {
-				logger.debug("No printer connteted");
-				printData.setPrinterConnected(false);
-				answer = false;
-			}
-		}catch(InterruptedException ie) {
-			logger.info("verifyPrinterConnected was interrupted", ie );
-			printData.setPrinterConnected(false);
-			answer = false;
 		}
-		lastPrinterVerification = LocalDateTime.now();
-		return answer;
+		
+		logger.debug("verifyPrinterConnected no heart beat.. printer not active");
+		
+		return false;
+
+//		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
+//		if (lastSerialHeartBeat != null && lastPrinterVerification != null && 
+//				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
+//						lastPrinterVerification.minusSeconds(15).isBefore(lastSerialHeartBeat)	)		){
+//			lastPrinterVerification = LocalDateTime.now();
+//			return true;
+//		}	
+//
+//		String s2cmd = "M111\r\n";
+//		byte[] toB = s2cmd.getBytes();
+//		comPort.writeBytes(toB, toB.length);
+//		boolean answer = false;
+//
+//		LocalDateTime breakNowFuture = LocalDateTime.now().plusSeconds(5);	
+//
+//		try {
+//			synchronized (monitor) {
+//				monitor.wait(10000);
+//			}
+//
+//			if(LocalDateTime.now().isAfter(breakNowFuture)) {
+//				logger.debug("No printer connteted");
+//				printData.setPrinterConnected(false);
+//				answer = false;
+//			}
+//		}catch(InterruptedException ie) {
+//			logger.info("verifyPrinterConnected was interrupted", ie );
+//			printData.setPrinterConnected(false);
+//			answer = false;
+//		}
+//		lastPrinterVerification = LocalDateTime.now();
+//		return answer;
 	}
 
 	private void sendTempData(String evnt) {

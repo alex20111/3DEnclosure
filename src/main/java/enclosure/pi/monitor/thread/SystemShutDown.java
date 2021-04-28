@@ -11,7 +11,6 @@ import enclosure.pi.monitor.arduino.PrinterPower;
 import enclosure.pi.monitor.arduino.ExtractorFan.ExtractorFanCmd;
 import enclosure.pi.monitor.arduino.Lights.LightAction;
 import enclosure.pi.monitor.arduino.PrinterPower.PowerAction;
-import enclosure.pi.monitor.service.GeneralService;
 import home.misc.Exec;
 
 public class SystemShutDown implements Runnable{

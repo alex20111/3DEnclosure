@@ -1,4 +1,3 @@
-import { Message } from './../_model/Message';
 import { SessionService } from './../services/session.service';
 import { PiWebSocketService, SocketMessage, WsAction } from './../services/pi-web-socket.service';
 import { PrintService, PrintServiceData } from './../services/print.service';
@@ -57,7 +56,34 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
     this.countdownToDate = this.session.getSharedObject(Constants.PRINTER_COOLDOWN_TIMER) as Date;
 
     setTimeout(() => this.initWebSocket(),800);   
-  
+
+
+    
+
+    // var request = new XMLHttpRequest();  
+    // request.open('GET', 'http://192.168.1.32:8081', true);
+    // request.onreadystatechange = function(){
+    //   console.log("rerereere: " , request);
+    //     if (request.readyState === 4){
+    //         if (request.status === 404) {  
+    //             alert("Oh no, it does not exist!");
+    //         }  
+    //     }
+    // };
+    // request.onerror= function (e) {
+    //   console.log("** An error occurred during the transaction : ", e);
+    // };
+    // request.send();   
+
+
+
+
+
+
+
+
+
+
   }
 
   initWebSocket(): void{
@@ -218,6 +244,9 @@ export class LcdDashboardComponent implements OnInit, OnDestroy {
         this.pausePrintLoading = false;
         this.error = err.message + ' ' + err.error.error;
       });
+
+
+      
   }
 
   autoShutdown(){    

@@ -1,5 +1,6 @@
 package enclosure.pi.monitor.thread;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -7,10 +8,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.exec.ExecuteException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import enclosure.pi.monitor.printer.PrinterHandler;
+import home.misc.Exec;
 
 public class ThreadManager {
 
@@ -22,6 +25,7 @@ public class ThreadManager {
 	private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(6);
 	private ScheduledFuture<?> printerShutdown;
 	private ScheduledFuture<?> serverShutdown;
+	private ScheduledFuture<?> streamWebcam;
 	@SuppressWarnings("unused")
 	private ScheduledFuture<?> sendSMSThread;
 
@@ -153,6 +157,56 @@ public class ThreadManager {
 			}
 			if (cnt == 20) {
 				logger.info("Could not terminate thread - serverShutdown" );
+			}
+		}
+
+	}
+	/**
+	 * 
+	 * Shut down the server
+	 * @throws IOException 
+	 * @throws ExecuteException 
+	 */
+	public void streamWebcamThread() throws ExecuteException, IOException {		
+
+		//todo cancel previous one if any
+		if (streamWebcam != null) {
+			stopStreamWebcamThread();
+		}
+
+		streamWebcam = executorService.schedule(new StreamWebcamThread(), 0, TimeUnit.SECONDS);
+	}
+	/**
+	 * @throws IOException 
+	 * @throws ExecuteException 
+	 * 
+	 */
+	public void stopStreamWebcamThread() throws ExecuteException, IOException {
+		logger.debug("stopStreamWebcamThread. Is streamWebcam not null? " + ( streamWebcam != null ? "Is not null" : "is null"));
+
+		if (streamWebcam != null) {
+			
+			Exec e = new Exec();
+			e.addCommand("sudo").addCommand("pkill").addCommand("motion");
+			int run = e.run();
+			
+			logger.debug("stopStreamWebcamThread pkill command executed with: " + run );
+			
+			streamWebcam.cancel(true);
+			int cnt = 0;
+			while(!streamWebcam.isDone() && cnt < 20) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				cnt ++;
+			}
+			if (cnt == 20) {
+				logger.info("Could not terminate thread - streamWebcam" );
+			}else {
+				streamWebcam = null;
 			}
 		}
 

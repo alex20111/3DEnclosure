@@ -17,13 +17,15 @@ export class GeneralService {
     return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/general/shutdown`, shuttingDown);
 
   }
+  streamWebcam(command: string): Observable<Message> {
+		//TurnOn = "turnOn webcam"
+		//TurnOff = "turnOff webcam"
+    //status = "Status of the webcam"
+    return this.http.post<Message>(`http://${Constants.HOST_ADDRESS}:8080/web/general/stream`, command);
 
-  // dashBoard(): Observable<DashBoard >{
+  }
 
-  //   return this.http.get<DashBoard>(`http://${Constants.HOST_ADDRESS}:8080/web/general/dashboard`);
-
-
-  // }
+  // stream
 
   getModifiedDate(date: Date, interval: string, units: number): Date {
     if (!(date instanceof Date))
@@ -46,12 +48,4 @@ export class GeneralService {
 
 }
 
-// export interface DashBoard{
-//     extrFanOnAuto: boolean;
-//     extracFanRPM : number;
-// 	  extracFanSpeed : number;
-// 	  temperature : string;
-// 	  lightOn : boolean;
-//     airQualityCo2 : string;
-//     airQualityVoc : string;
-// }
+

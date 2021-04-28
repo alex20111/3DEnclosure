@@ -1,0 +1,26 @@
+
+<p *ngIf="error">
+    <ngb-alert type="danger" (closed)="error ='' ">
+      {{error}}
+    </ngb-alert>
+  </p>
+  <p *ngIf="message">
+    <ngb-alert type="success" (closed)="message = ''">
+      <div [innerHTML]="message"></div>
+    </ngb-alert>
+  </p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12 ">
+            <button class="btn btn-success" (click)="webcamToggle()">{{btnText}}</button>
+        </div>
+        <div *ngIf="initConnection" class="spinner-border spinner-border-lg  mt-4 ml-2" style="color: white;"> </div>
+        <div class="col-12 " *ngIf="connected">
+            <iframe src="http://192.168.1.32:8081" title="3d Print" width="700" height="500" style="border:1px solid black;"
+                >
+            </iframe>
+        </div>
+
+    </div>
+</div>
