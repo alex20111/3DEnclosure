@@ -14,6 +14,8 @@ export class WebcamComponent implements OnInit, OnDestroy {
 
   btnText: string = "Wait..";
 
+  
+
   initConnection: boolean = false;
   connected: boolean = false;
   webcamConnect: any;
@@ -50,6 +52,7 @@ export class WebcamComponent implements OnInit, OnDestroy {
       }, 2000);
 
     } else {
+      this.initConnection = true;
       this.connectToWebcam("TurnOff");
     }
   }
@@ -75,11 +78,14 @@ export class WebcamComponent implements OnInit, OnDestroy {
         this.startWebcamCheck();
       } else if (result.message === 'Webcam cannot be reached' && this.connected){
         this.connected = false;
+        this.initConnection = false;
       }
     },
       err => {
         this.error = err.message + ' ' + err.error.error;
         this.btnText = "Turn ON";
+        this.connected = false;
+        this.initConnection = false;
       })
   }
 

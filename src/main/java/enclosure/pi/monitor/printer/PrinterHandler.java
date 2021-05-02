@@ -446,6 +446,14 @@ public class PrinterHandler {
 			}
 		}
 	}
+	/**
+	 * Return the log file name and path
+	 * @return
+	 */
+	public Path getPrintLogFile()
+	{
+		return this.filePath;
+	}
 	private boolean verifyPrinterConnected() { 	
 
 		LocalDateTime nowMinus20Sec = LocalDateTime.now().minusSeconds(20);
@@ -461,38 +469,6 @@ public class PrinterHandler {
 		
 		return false;
 
-//		//verify if we recieved a serial connection after we last check for the printer or 15 seconds before.. 
-//		if (lastSerialHeartBeat != null && lastPrinterVerification != null && 
-//				( lastSerialHeartBeat.isAfter(lastPrinterVerification) ||
-//						lastPrinterVerification.minusSeconds(15).isBefore(lastSerialHeartBeat)	)		){
-//			lastPrinterVerification = LocalDateTime.now();
-//			return true;
-//		}	
-//
-//		String s2cmd = "M111\r\n";
-//		byte[] toB = s2cmd.getBytes();
-//		comPort.writeBytes(toB, toB.length);
-//		boolean answer = false;
-//
-//		LocalDateTime breakNowFuture = LocalDateTime.now().plusSeconds(5);	
-//
-//		try {
-//			synchronized (monitor) {
-//				monitor.wait(10000);
-//			}
-//
-//			if(LocalDateTime.now().isAfter(breakNowFuture)) {
-//				logger.debug("No printer connteted");
-//				printData.setPrinterConnected(false);
-//				answer = false;
-//			}
-//		}catch(InterruptedException ie) {
-//			logger.info("verifyPrinterConnected was interrupted", ie );
-//			printData.setPrinterConnected(false);
-//			answer = false;
-//		}
-//		lastPrinterVerification = LocalDateTime.now();
-//		return answer;
 	}
 
 	private void sendTempData(String evnt) {

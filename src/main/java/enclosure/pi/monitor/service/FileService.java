@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +29,7 @@ import com.jsoniter.JsonIterator;
 import com.jsoniter.any.Any;
 
 import enclosure.pi.monitor.common.Constants;
+import enclosure.pi.monitor.printer.PrinterHandler;
 import enclosure.pi.monitor.service.model.FileList;
 import enclosure.pi.monitor.service.model.Message;
 import enclosure.pi.monitor.service.model.Message.MessageType;
@@ -128,5 +131,29 @@ public class FileService {
 		}
 
 		return Response.status(status).entity(msg).build();
+	}
+	
+	@GET
+	@Path("/downloadPrintLog")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public Response downloadFileWithGet() {
+//		System.out.println("Download file "+file);
+//		File fileDownload = new File(Config.UPLOAD_FOLDER + File.separator + file);
+		 java.nio.file.Path logFile = PrinterHandler.getInstance().getPrintLogFile();
+		 
+		 ResponseBuilder response = null;
+		 
+		 if (Files.exists(logFile)) {
+			 File fileDownload = null;
+				 response = Response.ok((Object) fileDownload);
+				response.header("Content-Disposition", "attachment;filename=" + fileDownload);
+		 }else {
+			 Message msg = new Message(MessageType.ERROR, "File does not exist");
+			 response = Response.status(Status.FORBIDDEN).entity(msg);
+		 }
+		
+		
+		
+		return response.build();
 	}
 }
