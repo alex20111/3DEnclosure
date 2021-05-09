@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -109,9 +108,7 @@ public class FileService {
 		logger.debug("gcodeFileList");
 
 		Message msg = new Message(MessageType.ERROR, "Forbidden");
-		Status status = Status.FORBIDDEN;
-
-	
+		Status status = Status.FORBIDDEN;	
 
 		try {
 
@@ -122,7 +119,6 @@ public class FileService {
 			 logger.debug("File list: " + fileList);
 			 
 			return Response.ok().entity(fileList).build();
-
 
 		}catch(Throwable ex) {
 			logger.error("error in upload" , ex);
@@ -150,8 +146,7 @@ public class FileService {
 		 }else {
 			 Message msg = new Message(MessageType.ERROR, "File does not exist");
 			 response = Response.status(Status.FORBIDDEN).entity(msg);
-		 }
-		
+		 }	
 		
 		
 		return response.build();

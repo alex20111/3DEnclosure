@@ -263,7 +263,9 @@ public class MonitorThread implements Runnable{
 					ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
 					fan.setFanSpeed(0);
 					
-					ph.emergencyStop();
+					if (ph.getPrintData().isPrinterConnected()) {
+						ph.emergencyStop();
+					}					
 					
 					PrinterPower pp = new PrinterPower(PowerAction.OFF);
 					pp.action();

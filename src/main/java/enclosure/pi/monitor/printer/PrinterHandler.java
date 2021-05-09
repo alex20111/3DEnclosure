@@ -102,7 +102,7 @@ public class PrinterHandler {
 						logger.debug("Serial is open: " + (comPort != null ? comPort.isOpen() : "false") );
 
 						if (comPort == null || !comPort.isOpen()) {
-
+														      //platform-3f980000.usb-usb-0:1.2:1.0-port0 
 							comPort = SerialPort.getCommPort("/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0");
 
 							comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
@@ -511,7 +511,7 @@ public class PrinterHandler {
 	 */
 	private void startListening() {
 
-		if (printerListeningThread == null) {
+		if (printerListeningThread == null || !printerListeningThread.isAlive()) {
 			logger.debug("Starting thread");
 
 			printerListeningThread = new Thread(new Runnable() {
@@ -568,21 +568,24 @@ public class PrinterHandler {
 			});
 
 			printerListeningThread.start();
-			try {
-				Thread.sleep(100);
-
-				//wait until got good data
-				for(int i=0 ; i < 5 ; i ++) {
-					sendCommand("M111", 20000);
-					if (serialConnStarted) {
-						break;
-					}
-					Thread.sleep(500);
-				}
-			} catch (InterruptedException e) {	} catch (IOException e) {}
+	
 		}else {
 			logger.debug("printer listening thread already started");
 		}
+				
+		try {
+			Thread.sleep(100);
+
+			//wait until got good data
+			for(int i=0 ; i < 5 ; i ++) {
+				sendCommand("M111", 20000);
+				if (serialConnStarted) {
+					break;
+				}
+				Thread.sleep(500);
+			}
+		} catch (InterruptedException e) {	} catch (IOException e) {}
+		
 		logger.debug("listenet started");
 	}
 	private void finalizeSdPrinting() {

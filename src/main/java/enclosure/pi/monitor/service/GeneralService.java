@@ -2,10 +2,6 @@ package enclosure.pi.monitor.service;
 
 
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
