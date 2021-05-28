@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortIOException;
 import com.jsoniter.output.JsonStream;
 
 import enclosure.pi.monitor.arduino.ExtractorFan;
@@ -65,7 +66,6 @@ public class PrinterHandler {
 	private LocalDateTime prevSdCardReading = LocalDateTime.now();
 
 	private LocalDateTime lastSerialHeartBeat = null; //last time that we got a serial return..
-	private LocalDateTime lastPrinterVerification = null;
 
 	private PrintServiceData printData = new PrintServiceData();
 
@@ -102,7 +102,7 @@ public class PrinterHandler {
 						logger.debug("Serial is open: " + (comPort != null ? comPort.isOpen() : "false") );
 
 						if (comPort == null || !comPort.isOpen()) {
-														      //platform-3f980000.usb-usb-0:1.2:1.0-port0 
+							//platform-3f980000.usb-usb-0:1.2:1.0-port0 
 							comPort = SerialPort.getCommPort("/dev/serial/by-path/platform-3f980000.usb-usb-0:1.2:1.0-port0");
 
 							comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
@@ -114,18 +114,23 @@ public class PrinterHandler {
 							boolean portOpen = comPort.openPort();
 
 							if (portOpen) {
-								logger.info("Connected to printer");
-								printData.setPrinterConnected(true); 
-								in = comPort.getInputStream();
+								logger.info("Connecting to printer");
+								//1st check if connection is initialized
+								if (initConnection()) {
 
-								filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
-								serialQueue = new ArrayBlockingQueue<String>(1000);
-								serialQueue.add("Starting print instance");
-								ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
+									printData.setPrinterConnected(true); 
+									in = comPort.getInputStream();
 
-//								Thread.sleep(3000);
-								startListening();
-								sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
+									filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+									serialQueue = new ArrayBlockingQueue<String>(1000);
+									serialQueue.add("Starting print instance");
+									ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
+
+										startListening();
+									sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
+								}else {
+									logger.error("COULD not re-init printer connection ERROR");
+								}
 							}
 							else {
 								printData.setPrinterConnected(false);								 
@@ -311,7 +316,7 @@ public class PrinterHandler {
 						break;
 					}
 				}
-				
+
 				if (sdCardReady) {
 
 					sendCommand("M20", 20000);	// list files on the card.			
@@ -457,16 +462,16 @@ public class PrinterHandler {
 	private boolean verifyPrinterConnected() { 	
 
 		LocalDateTime nowMinus20Sec = LocalDateTime.now().minusSeconds(20);
-		
+
 		logger.debug("verifyPrinterConnected. lastSerialHeartBeat: " + lastSerialHeartBeat + " - nowMinus20Sec: " + nowMinus20Sec);
-		
-		 
+
+
 		if (lastSerialHeartBeat != null && lastSerialHeartBeat.isAfter(nowMinus20Sec)) {
 			return true;
 		}
-		
+
 		logger.debug("verifyPrinterConnected no heart beat.. printer not active");
-		
+
 		return false;
 
 	}
@@ -556,6 +561,12 @@ public class PrinterHandler {
 									}
 								}
 							}
+						}catch(SerialPortIOException se) {
+							logger.error("Error in listening thread SerialPortIOException" , se);
+							serialConnStarted = false;
+							comPort.closePort();
+							printData.setPrinterConnected(false);
+							break;
 						}catch(IOException e) {
 							logger.error("Error in listening thread" , e);
 							serialConnStarted = false;
@@ -568,11 +579,11 @@ public class PrinterHandler {
 			});
 
 			printerListeningThread.start();
-	
+
 		}else {
 			logger.debug("printer listening thread already started");
 		}
-				
+
 		try {
 			Thread.sleep(100);
 
@@ -585,7 +596,7 @@ public class PrinterHandler {
 				Thread.sleep(500);
 			}
 		} catch (InterruptedException e) {	} catch (IOException e) {}
-		
+
 		logger.debug("listenet started");
 	}
 	private void finalizeSdPrinting() {
@@ -623,7 +634,7 @@ public class PrinterHandler {
 		WebSocketClient.getInstance().sendMessage(msg);
 		//send SMS message
 		ThreadManager.getInstance().sendSmsMessage(new SendSMSThread("Printing Done!", "Your printing is finished."));
-		
+
 		try {
 			//set fan to 100%
 			ExtractorFan fan = new ExtractorFan(ExtractorFanCmd.SET_SPEED);
@@ -632,6 +643,33 @@ public class PrinterHandler {
 			logger.error("Error for Extractor Fan: " + e.getMessage());
 		}
 
+	}
+	private boolean initConnection() {
+
+		boolean proceed = true;
+		if (printerListeningThread != null) {
+			logger.debug("Killing printerListeningThread");
+			printerListeningThread.interrupt();
+			int cnt = 0;
+			while(printerListeningThread != null && printerListeningThread.isAlive() && cnt < 3) {
+				try {
+					printerListeningThread.join(5000);
+					cnt ++;
+				} catch (InterruptedException e) {}
+			}
+			if (cnt > 2) {
+				logger.error("Could not kill Thread: printerListeningThread");
+				proceed = false;
+			}else {
+				printerListeningThread = null;
+
+			}
+		}
+
+		lastSerialHeartBeat = null;
+		in = null;
+
+		return proceed;
 	}
 
 }

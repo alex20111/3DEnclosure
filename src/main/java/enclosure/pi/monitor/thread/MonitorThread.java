@@ -129,7 +129,7 @@ public class MonitorThread implements Runnable{
 					LocalDateTime now = LocalDateTime.now();
 					
 					if (nextMvToBeSent == null || now.isAfter(nextMvToBeSent)) {
-						SendSMSThread msg = new SendSMSThread("No Movment", "No movement detected " + now);
+						SendSMSThread msg = new SendSMSThread("No Movment", "No movement detected " + now + " shutDownCnt: " + shutDownCnt);
 						ThreadManager.getInstance().sendSmsMessage(msg);
 						nextMvToBeSent = now.plusMinutes(5);
 						shutDownCnt ++;

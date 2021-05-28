@@ -93,6 +93,9 @@ public class ThreadManager {
 	}
 
 	public void startPrinterSerialListener(BlockingQueue<String> queue, Path fileName) {
+		
+		stopPrinterSerialListener();
+		
 		serialListener = executorService.schedule(new PrinterSerialConsoleThread(queue, fileName), 0, TimeUnit.MILLISECONDS);
 	}
 	public void stopPrinterSerialListener() {
