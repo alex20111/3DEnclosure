@@ -63,7 +63,16 @@ public class ThreadManager {
 			overridePrinterShutdown();
 		}
 
-		PrinterHandler.getInstance().getPrintData().setPrinterShutdownInProgress(true);
+		PrinterHandler ph = PrinterHandler.getInstance();
+		ph.getPrintData().setPrinterShutdownInProgress(true);
+		//send command to turn off bed and nozzle 
+		try {
+			ph.sendCommand("M104 S0", 0);
+			Thread.sleep(1000);
+			ph.sendCommand("M140 S0", 0);
+		} catch (IOException | InterruptedException e) {
+			logger.error("error in shutdownPrinter setting hot/bed temperature",e);
+		}
 
 		printerShutdown = executorService.schedule(new PrinterShutdown(), delay, TimeUnit.MILLISECONDS);
 	}

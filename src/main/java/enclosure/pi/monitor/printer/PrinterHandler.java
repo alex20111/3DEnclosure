@@ -45,7 +45,6 @@ public class PrinterHandler {
 	private static PrinterHandler printerHandler;
 
 	private Object monitor = new Object();
-
 	private Object pauseThread = new Object();
 
 	private SerialPort comPort;
@@ -116,21 +115,18 @@ public class PrinterHandler {
 							if (portOpen) {
 								logger.info("Connecting to printer");
 								//1st check if connection is initialized
-								if (initConnection()) {
 
-									printData.setPrinterConnected(true); 
-									in = comPort.getInputStream();
+								printData.setPrinterConnected(true); 
+								in = comPort.getInputStream();
 
-									filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
-									serialQueue = new ArrayBlockingQueue<String>(1000);
-									serialQueue.add("Starting print instance");
-									ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
+								filePath= Paths.get("/opt/jetty/PrinterData"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")) + ".txt");
+								serialQueue = new ArrayBlockingQueue<String>(1000);
+								serialQueue.add("Starting print instance");
+								ThreadManager.getInstance().startPrinterSerialListener(serialQueue, filePath);
 
-										startListening();
-									sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
-								}else {
-									logger.error("COULD not re-init printer connection ERROR");
-								}
+								startListening();
+								sendCommand("M155 S5", 0);//send a command to get the hot end and bed temp every 10 sec 
+
 							}
 							else {
 								printData.setPrinterConnected(false);								 
@@ -158,7 +154,7 @@ public class PrinterHandler {
 						logger.error("Thread printer: " , ex);
 					}
 					try {
-						Thread.sleep(15000);
+						Thread.sleep(8000);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
@@ -439,7 +435,7 @@ public class PrinterHandler {
 	}
 
 	public void sendCommand(String command, int wait) throws IOException, InterruptedException {
-		//				logger.debug("Writing: " + command );
+
 		serialQueue.offer("Writing: " + command + "\n");
 		String s2cmd = command + "\r\n";
 		byte[] toB = s2cmd.getBytes();
@@ -563,15 +559,20 @@ public class PrinterHandler {
 							}
 						}catch(SerialPortIOException se) {
 							logger.error("Error in listening thread SerialPortIOException" , se);
-							serialConnStarted = false;
-							comPort.closePort();
-							printData.setPrinterConnected(false);
-							break;
+							//							serialConnStarted = false;
+							//							comPort.closePort();
+							//							printData.setPrinterConnected(false);
+							//							break;
 						}catch(IOException e) {
 							logger.error("Error in listening thread" , e);
 							serialConnStarted = false;
 							break;
 						}
+					}
+					try {
+						in.close();
+					} catch (IOException e) {
+						logger.error("error closing comm input stream", e);
 					}
 					logger.debug("printer listening thread ended");
 					printerListeningThread = null;
@@ -642,36 +643,7 @@ public class PrinterHandler {
 		}catch (IOException e) {
 			logger.error("Error for Extractor Fan: " + e.getMessage());
 		}
-
 	}
-	private boolean initConnection() {
-
-		boolean proceed = true;
-		if (printerListeningThread != null) {
-			logger.debug("Killing printerListeningThread");
-			printerListeningThread.interrupt();
-			int cnt = 0;
-			while(printerListeningThread != null && printerListeningThread.isAlive() && cnt < 3) {
-				try {
-					printerListeningThread.join(5000);
-					cnt ++;
-				} catch (InterruptedException e) {}
-			}
-			if (cnt > 2) {
-				logger.error("Could not kill Thread: printerListeningThread");
-				proceed = false;
-			}else {
-				printerListeningThread = null;
-
-			}
-		}
-
-		lastSerialHeartBeat = null;
-		in = null;
-
-		return proceed;
-	}
-
 }
 
 // Printing Started
